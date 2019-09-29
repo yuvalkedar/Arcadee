@@ -57,7 +57,7 @@ void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
 }
 
-void winning_check() {  //TODO: check the sensor's exact limit value. Sometimes it shows winning for no reason.
+void winning_check() {  //TODO: check the sensor's exact limit value. Sometimes it shows winning for no reason; might be because of the btn's bug.
     if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) {
         digitalWrite(WINNING_PIN, HIGH);
         Serial.println(F("Congrats son, you might be the next Kobe Bryant!"));
