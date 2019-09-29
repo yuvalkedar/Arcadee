@@ -52,9 +52,6 @@ claweeCanon canon(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 ClaweeServo aiming_servo(SERVO_UPDATE_MS);
 ClaweeServo magazine_servo(SERVO_UPDATE_MS);  // The time interval here doesn't really matter
 
-bool aiming_btn_state = 0;
-bool launcher_btn_state = 0;
-
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
@@ -101,27 +98,6 @@ bool check_ball_loaded() {
         limit_switches(0);
         // Serial.println(F("Ready for shooting!"));
         return 1;
-    }
-}
-
-void check_aiming_btn() {
-    if (aiming_btn.pressed()) {
-        limit_switches(1);
-        aiming_btn_state = 1;
-    }
-    if (aiming_btn_state == 1) aiming_servo.Update();
-    if (aiming_btn.released()) aiming_btn_state = 0;
-}
-
-void check_launcher_btn() {
-    if (launcher_btn.pressed()) {
-        limit_switches(1);
-        launcher_btn_state = 1;
-    }
-    if (launcher_btn_state == 1) canon.Update();
-    if (launcher_btn.released()) {
-        launcher_btn_state = 0;
-        launcher_timer.start();  //NOTICE: a very long press on launcher_btn makes the canon jumping/jittering
     }
 }
 
@@ -189,9 +165,12 @@ void loop() {
     if (check_ball_loaded()) {
         if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
     }
+    if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
-    check_aiming_btn();
-    check_launcher_btn();
+    if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
+    if (!digitalRead(LAUNCHER_BTN_PIN)) canon.Update();
+
+    if (launcher_btn.released()) launcher_timer.start();  //NOTICE: a very long press on launcher_btn makes the canon jumping/jittering
 
     (analogRead(MAGAZINE_SENSOR_PIN) <= MAGAZINE_SENSOR_LIMIT) ? digitalWrite(MAGAZINE_MOTOR_PIN, HIGH) : digitalWrite(MAGAZINE_MOTOR_PIN, LOW);
     winning_check();
