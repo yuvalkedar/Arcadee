@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Adafruit_NeoPixel.h>
+#include <Servo.h>
 
 #define NUM_PIXELS (8)
-#define CANON_MIN (55)
+#define CANON_MIN (0)
 
 class claweeCanon : public Adafruit_NeoPixel {
    public:
@@ -13,7 +14,10 @@ class claweeCanon : public Adafruit_NeoPixel {
 
     void Update();
 
+    void Attach(uint8_t pin);
+
    private:
+    Servo servo;
     int strength = CANON_MIN;
     uint8_t increment;
     uint32_t last_update;

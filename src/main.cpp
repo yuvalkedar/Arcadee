@@ -14,12 +14,13 @@
 #include <Button.h>  // https://github.com/madleech/Button
 #include <timer.h>   // https://github.com/brunocalou/Timer
 #include <timerManager.h>
-#include "claweeCanon.h"
+// #include "claweeCanon.h"
+#include <Adafruit_NeoPixel.h>
 #include "claweeServo.h"
-#include "tests.h"
 
 #define LAUNCHER_BTN_PIN (2)  // Right pin in the RPi (GPIO18)
-#define AIMING_BTN_PIN (4)    // Front pin in the RPi (GPIO17)
+#define LAUNCHER_PIN (3)
+#define AIMING_BTN_PIN (4)  // Front pin in the RPi (GPIO17)
 #define AIMING_SERVO_PIN (5)
 #define MAGAZINE_SERVO_PIN (6)
 #define WINNING_PIN (7)     // winning switch pin in the RPi (GPIO12)
@@ -41,6 +42,11 @@
 #define LAUNCHER_DELAY_MS (2000)
 #define LED_BAR_BRIGHTNESS (250)
 #define SERVO_UPDATE_MS (40)
+#define CANON_MIN (0)
+#define CANON_MAX (180)
+#define CALIBRATION_MS (1000)
+#define CANON_STRENGTH (50)
+#define UPDATE_MS (100)
 
 Button start_btn(START_GAME_PIN);
 Button aiming_btn(AIMING_BTN_PIN);
@@ -48,9 +54,16 @@ Button launcher_btn(LAUNCHER_BTN_PIN);
 
 Timer launcher_timer;
 
-claweeCanon canon(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
+// claweeCanon canon(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 ClaweeServo aiming_servo(SERVO_UPDATE_MS);
 ClaweeServo magazine_servo(SERVO_UPDATE_MS);  // The time interval here doesn't really matter
+Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
+Servo ESC;
+
+uint32_t last_update;
+uint8_t led_bar = 0;
+uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
+uint8_t increment = 1;
 
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -71,10 +84,12 @@ void game_start() {  // resets all parameters
     limit_switches(0);
     aiming_servo.Restart();
     magazine_servo.Magazine_restart();
-    canon.Restart();
+    ESC.write(CANON_MIN);
+    led_bar = 0;
+    // canon.Restart();
 
-    canon.clear();  // Set all pixel colors to 'off'
-    canon.show();
+    // canon.clear();  // Set all pixel colors to 'off'
+    // canon.show();
 
     digitalWrite(WINNING_PIN, LOW);
 }
@@ -117,63 +132,88 @@ void led_strip_strobe(uint8_t color, uint8_t brigtness) {  // (led pin, brightne
     delay(200);
 }
 
-void setup() {
-    Serial.begin(115200);
-
-    start_btn.begin();
-    launcher_btn.begin();
-    aiming_btn.begin();
-
-    launcher_timer.setCallback(launcher_cb);
-    launcher_timer.setTimeout(LAUNCHER_DELAY_MS);
-
-    aiming_servo.Attach(AIMING_SERVO_PIN);
-    aiming_servo.Restart();
-    magazine_servo.Attach(MAGAZINE_SERVO_PIN);
-    magazine_servo.Magazine_restart();
-
-    canon.begin();
-    canon.setBrightness(LED_BAR_BRIGHTNESS);
-
-    pinMode(LAUNCHER_BTN_PIN, INPUT);
-    pinMode(AIMING_BTN_PIN, INPUT);
-    pinMode(START_GAME_PIN, INPUT);
-    pinMode(WINNING_PIN, INPUT);
-    pinMode(BASKET_SENSOR_PIN, INPUT);
-    pinMode(MAGAZINE_SENSOR_PIN, INPUT);
-
-    pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
-    pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
-    limit_switches(0);
-
-    pinMode(MAGAZINE_MOTOR_PIN, OUTPUT);
-    pinMode(R_LED_PIN, OUTPUT);
-    pinMode(G_LED_PIN, OUTPUT);
-    pinMode(B_LED_PIN, OUTPUT);
-
-    Serial.println(F(
-        "_______________________________\n"
-        "\n"
-        "   B a l l   L a u n c h e r   \n"
-        "_______________________________\n"
-        "\n"
-        "Made by KD Technology\n"
-        "\n"));
+void canon_begin() {
+    ESC.attach(LAUNCHER_PIN, 1000, 2000);
+    ESC.write(CANON_MAX);
+    delay(CALIBRATION_MS);
+    ESC.write(CANON_MIN);
+    delay(CALIBRATION_MS);
 }
 
-void loop() {
-    if (check_ball_loaded()) {
-        if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+void canon_update() {
+    if (millis() - last_update > UPDATE_MS * 3) {
+        last_update = millis();
+        strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
+        strength_bar.show();
+        led_bar += increment;
+        if (led_bar <= 0 || led_bar >= 7) increment = -increment;
+        if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
+        Serial.print(" led bar: ");
+        Serial.println(led_bar);
+
+        // NOTICE: ALWAYS SHOOTING AT THE SAME STRENGTH
+        ESC.write(CANON_STRENGTH);
     }
-    if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
-    if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
-    if (!digitalRead(LAUNCHER_BTN_PIN)) canon.Update();
+    void setup() {
+        Serial.begin(115200);
 
-    if (launcher_btn.released()) launcher_timer.start();  //NOTICE: a very long press on launcher_btn makes the canon jumping/jittering
+        start_btn.begin();
+        launcher_btn.begin();
+        aiming_btn.begin();
 
-    (analogRead(MAGAZINE_SENSOR_PIN) <= MAGAZINE_SENSOR_LIMIT) ? digitalWrite(MAGAZINE_MOTOR_PIN, HIGH) : digitalWrite(MAGAZINE_MOTOR_PIN, LOW);
-    winning_check();
-    TimerManager::instance().update();
-    // led_strip_strobe(R_LED_PIN, 100);
-}
+        launcher_timer.setCallback(launcher_cb);
+        launcher_timer.setTimeout(LAUNCHER_DELAY_MS);
+
+        aiming_servo.Attach(AIMING_SERVO_PIN);
+        aiming_servo.Restart();
+        magazine_servo.Attach(MAGAZINE_SERVO_PIN);
+        magazine_servo.Magazine_restart();
+
+        // canon.begin();
+        // canon.setBrightness(LED_BAR_BRIGHTNESS);
+        // canon.Attach(LAUNCHER_PIN);
+
+        pinMode(LAUNCHER_BTN_PIN, INPUT);
+        pinMode(AIMING_BTN_PIN, INPUT);
+        pinMode(START_GAME_PIN, INPUT);
+        pinMode(WINNING_PIN, INPUT);
+        pinMode(BASKET_SENSOR_PIN, INPUT);
+        pinMode(MAGAZINE_SENSOR_PIN, INPUT);
+
+        pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
+        pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
+        limit_switches(0);
+
+        pinMode(MAGAZINE_MOTOR_PIN, OUTPUT);
+        pinMode(R_LED_PIN, OUTPUT);
+        pinMode(G_LED_PIN, OUTPUT);
+        pinMode(B_LED_PIN, OUTPUT);
+
+        Serial.println(F(
+            "_______________________________\n"
+            "\n"
+            "   B a l l   L a u n c h e r   \n"
+            "_______________________________\n"
+            "\n"
+            "Made by KD Technology\n"
+            "\n"));
+    }
+
+    void loop() {
+        if (check_ball_loaded()) {
+            if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+        }
+        if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
+
+        if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
+        // if (!digitalRead(LAUNCHER_BTN_PIN)) canon.Update();
+        if (!digitalRead(LAUNCHER_BTN_PIN)) canon_update();
+
+        if (launcher_btn.released()) launcher_timer.start();  //NOTICE: a very long press on launcher_btn makes the canon jumping/jittering
+
+        (analogRead(MAGAZINE_SENSOR_PIN) <= MAGAZINE_SENSOR_LIMIT) ? digitalWrite(MAGAZINE_MOTOR_PIN, HIGH) : digitalWrite(MAGAZINE_MOTOR_PIN, LOW);
+        winning_check();
+        TimerManager::instance().update();
+        // led_strip_strobe(R_LED_PIN, 100);
+    }

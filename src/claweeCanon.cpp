@@ -2,7 +2,8 @@
 #include "Arduino.h"
 
 #define NUM_PIXELS (8)
-#define CANON_MAX (95)
+#define CANON_MAX (180)
+#define CANON_STRENGTH (36)
 #define LAUNCHER_PIN (3)
 #define UPDATE_MS (100)  // in milliseconds
 
@@ -11,8 +12,17 @@ claweeCanon::claweeCanon(uint16_t pixels, uint8_t pin, uint8_t type) : Adafruit_
 }
 
 void claweeCanon::Restart() {
-    analogWrite(LAUNCHER_PIN, CANON_MIN);
+    servo.write(CANON_MIN);
     led_bar = 0;
+}
+
+void claweeCanon::Attach(uint8_t pin) {
+    servo.attach(pin);
+    //Calibration
+    servo.write(CANON_MAX);
+    delay(1000);
+    servo.write(CANON_MIN);
+    delay(1000);
 }
 
 void claweeCanon::Update() {
@@ -27,9 +37,14 @@ void claweeCanon::Update() {
         Serial.print(" led bar: ");
         Serial.println(led_bar);
 
+        // NOTICE: ALWAYS SHOOTING AT THE SAME STRENGTH
+        servo.write(CANON_STRENGTH);
+
+        /*
         strength = map(led_bar, 0, NUM_PIXELS - 1, CANON_MIN, CANON_MAX);
-        analogWrite(LAUNCHER_PIN, strength);
+        servo.write(strength);
         Serial.print("Canon strength: ");
         Serial.print(strength);
+        */
     }
 }
