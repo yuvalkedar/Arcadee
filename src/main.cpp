@@ -64,6 +64,7 @@ uint32_t last_update;
 uint8_t led_bar = 0;
 uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 uint8_t increment = 1;
+uint8_t strength = CANON_MIN;
 
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -94,6 +95,8 @@ void reset_cb() {
     magazine_servo.Magazine_restart();
     ESC.write(CANON_MIN);
     led_bar = 0;
+    strength_bar.clear();
+    strength_bar.show();
 }
 
 void launcher_cb() {  // when launcher button released
@@ -135,11 +138,13 @@ void canon_update() {
         led_bar += increment;
         if (led_bar <= 0 || led_bar >= 7) increment = -increment;
         if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
-        Serial.print(" led bar: ");
-        Serial.println(led_bar);
+        // Serial.print("led bar: ");
+        // Serial.print(led_bar);
 
-        // NOTICE: ALWAYS SHOOTING AT THE SAME STRENGTH
-        ESC.write(CANON_STRENGTH);
+        (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
+        ESC.write(strength);
+        // Serial.print(" Canon strength: ");
+        // Serial.println(strength);
     }
 }
 
@@ -149,6 +154,7 @@ void setup() {
     start_btn.begin();
     launcher_btn.begin();
     aiming_btn.begin();
+    strength_bar.begin();
 
     launcher_timer.setCallback(launcher_cb);
     launcher_timer.setTimeout(LAUNCHER_DELAY_MS);
@@ -191,7 +197,7 @@ void loop() {
     if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
-    if (!digitalRead(LAUNCHER_BTN_PIN)) canon_update();  //TODO: add the led_bar with canon_update() and change strength +-1
+    if (!digitalRead(LAUNCHER_BTN_PIN)) canon_update();
 
     if (launcher_btn.released()) launcher_timer.start();
 
