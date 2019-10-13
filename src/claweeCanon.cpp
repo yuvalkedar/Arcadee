@@ -26,7 +26,6 @@ void claweeCanon::Attach(uint8_t pin) {
 }
 
 void claweeCanon::Update() {
-    // NOTICE: Sometimes the led_bar is stuck on the first led and the strength goes maximum.
     if (millis() - last_update > UPDATE_MS * 3) {
         last_update = millis();
         setPixelColor(led_bar, led_bar_colour[led_bar]);
