@@ -39,21 +39,22 @@
 #define GAME_TIME (20000)  // in milliseconds
 #define BASKET_SENSOR_LIMIT (500)
 #define MAGAZINE_SENSOR_LIMIT (350)
-#define LAUNCHER_DELAY_MS (2000)
+#define LAUNCHER_DELAY_MS (500)
+#define RESET_DELAY_MS (1500)
 #define LED_BAR_BRIGHTNESS (250)
 #define SERVO_UPDATE_MS (40)
 #define CANON_MIN (0)
 #define CANON_MAX (180)
 #define CALIBRATION_MS (1000)
 #define CANON_STRENGTH (49)
-#define UPDATE_MS (100)
+// #define UPDATE_MS (300)
 
 Button start_btn(START_GAME_PIN);
 Button aiming_btn(AIMING_BTN_PIN);
 Button launcher_btn(LAUNCHER_BTN_PIN);
 
-Timer launcher_timer;
-Timer reset_timer;
+Timer launcher_timer;  //a "delay" after releasing the second button and before shooting (for canon motor to reach its speed)
+Timer reset_timer;     //resets canon after shooting a ball
 
 ClaweeServo aiming_servo(SERVO_UPDATE_MS);
 ClaweeServo magazine_servo(SERVO_UPDATE_MS);  // The time interval here doesn't really matter
@@ -130,8 +131,8 @@ void canon_begin() {
     delay(CALIBRATION_MS);
 }
 
-void canon_update() {
-    if (millis() - last_update > UPDATE_MS * 3) {
+void canon_update() {  //TODO: Fix the led_bar that sometimes gets stuck on first led
+    if (millis() - last_update > UPDATE_MS) {
         last_update = millis();
         strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
         strength_bar.show();
@@ -160,7 +161,7 @@ void setup() {
     launcher_timer.setTimeout(LAUNCHER_DELAY_MS);
 
     reset_timer.setCallback(reset_cb);
-    reset_timer.setTimeout(LAUNCHER_DELAY_MS);
+    reset_timer.setTimeout(RESET_DELAY_MS);
 
     aiming_servo.Attach(AIMING_SERVO_PIN);
     aiming_servo.Restart();
