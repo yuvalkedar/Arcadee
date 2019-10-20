@@ -39,7 +39,7 @@
 #define GAME_TIME (20000)  // in milliseconds
 #define BASKET_SENSOR_LIMIT (500)
 #define MAGAZINE_SENSOR_LIMIT (350)
-#define LAUNCHER_DELAY_MS (1000)
+#define LAUNCHER_DELAY_MS (2000)
 #define LED_BAR_BRIGHTNESS (250)
 #define SERVO_UPDATE_MS (40)
 #define CANON_MIN (0)
