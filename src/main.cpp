@@ -47,7 +47,7 @@
 #define CANON_MAX (180)
 #define CALIBRATION_MS (1000)
 #define CANON_STRENGTH (49)
-// #define UPDATE_MS (300)
+#define UPDATE_MS (300)
 
 Button start_btn(START_GAME_PIN);
 Button aiming_btn(AIMING_BTN_PIN);
@@ -55,13 +55,13 @@ Button launcher_btn(LAUNCHER_BTN_PIN);
 
 Timer launcher_timer;  //a "delay" after releasing the second button and before shooting (for canon motor to reach its speed)
 Timer reset_timer;     //resets canon after shooting a ball
+Timer strength_timer;  //updates the canon's strength and led_bar
 
 ClaweeServo aiming_servo(SERVO_UPDATE_MS);
 ClaweeServo magazine_servo(SERVO_UPDATE_MS);  // The time interval here doesn't really matter
 Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 Servo ESC;
 
-uint32_t last_update;
 uint8_t led_bar = 0;
 uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 uint8_t increment = 1;
@@ -131,22 +131,19 @@ void canon_begin() {
     delay(CALIBRATION_MS);
 }
 
-void canon_update() {  //TODO: Fix the led_bar that sometimes gets stuck on first led
-    if (millis() - last_update > UPDATE_MS) {
-        last_update = millis();
-        strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
-        strength_bar.show();
-        led_bar += increment;
-        if (led_bar <= 0 || led_bar >= 7) increment = -increment;
-        if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
-        // Serial.print("led bar: ");
-        // Serial.print(led_bar);
+void canon_update() {
+    strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
+    strength_bar.show();
+    led_bar += increment;
+    if (led_bar <= 0 || led_bar >= 7) increment = -increment;
+    if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
+    // Serial.print("led bar: ");
+    // Serial.print(led_bar);
 
-        (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
-        ESC.write(strength);
-        // Serial.print(" Canon strength: ");
-        // Serial.println(strength);
-    }
+    (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
+    ESC.write(strength);
+    // Serial.print(" Canon strength: ");
+    // Serial.println(strength);
 }
 
 void setup() {
@@ -162,6 +159,9 @@ void setup() {
 
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_DELAY_MS);
+
+    strength_timer.setCallback(canon_update);
+    strength_timer.setInterval(UPDATE_MS);
 
     aiming_servo.Attach(AIMING_SERVO_PIN);
     aiming_servo.Restart();
@@ -198,9 +198,12 @@ void loop() {
     if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
-    if (!digitalRead(LAUNCHER_BTN_PIN)) canon_update();
+    if (!digitalRead(LAUNCHER_BTN_PIN) && !strength_timer.isRunning()) strength_timer.start();
 
-    if (launcher_btn.released()) launcher_timer.start();
+    if (launcher_btn.released() && strength_timer.isRunning()) {
+        launcher_timer.start();
+        strength_timer.stop();
+    }
 
     (analogRead(MAGAZINE_SENSOR_PIN) <= MAGAZINE_SENSOR_LIMIT) ? digitalWrite(MAGAZINE_MOTOR_PIN, LOW) : digitalWrite(MAGAZINE_MOTOR_PIN, HIGH);
     winning_check();

@@ -33,7 +33,7 @@ void ClaweeServo::Load() {
     // magazine_restart();
 }
 
-void ClaweeServo::Update() {  //TODO: Fix the canon that sometimes jumps to the center
+void ClaweeServo::Update() {
     if (millis() - last_update > servo_update) {
         last_update = millis();
         position += increment;
