@@ -129,10 +129,7 @@ void canon_begin() {
 }
 
 void canon_update() {
-<<<<<<< HEAD
     noInterrupts();
-=======
->>>>>>> 18b817aa500369e76487c82f86d86bc89c99c736
     strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
     strength_bar.show();
     led_bar += increment;
@@ -145,10 +142,7 @@ void canon_update() {
     ESC.write(strength);
     // Serial.print(" Canon strength: ");
     // Serial.println(strength);
-<<<<<<< HEAD
     interrupts();
-=======
->>>>>>> 18b817aa500369e76487c82f86d86bc89c99c736
 }
 
 void setup() {
