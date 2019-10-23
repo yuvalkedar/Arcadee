@@ -8,7 +8,6 @@
 	
 	Arduino Nano communicates with RPi.
 	RPi sends button press commands (via app) to the Arduino, who sends commands to the machine.
-    // TODO: RGB LEDs effects
 */
 
 #include <Button.h>  // https://github.com/madleech/Button
@@ -23,11 +22,8 @@
 #define AIMING_BTN_PIN (4)  // Front pin in the RPi (GPIO17)
 #define AIMING_SERVO_PIN (5)
 #define MAGAZINE_SERVO_PIN (6)
-#define WINNING_PIN (7)     // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (8)  // coin switch pin in the RPi (GPIO25)
-// #define R_LED_PIN (9)
-// #define G_LED_PIN (10)
-// #define B_LED_PIN (11)
+#define WINNING_PIN (7)           // winning switch pin in the RPi (GPIO12)
+#define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
 #define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (13)   // limit switch f/b pin in the RPi (GPIO16)
 #define LED_BAR_PIN (A0)          // D14
@@ -39,32 +35,34 @@
 #define GAME_TIME (20000)  // in milliseconds
 #define BASKET_SENSOR_LIMIT (500)
 #define MAGAZINE_SENSOR_LIMIT (350)
-#define LAUNCHER_DELAY_MS (2000)
+#define LAUNCHER_DELAY_MS (500)
+#define RESET_DELAY_MS (1500)
 #define LED_BAR_BRIGHTNESS (250)
 #define SERVO_UPDATE_MS (40)
 #define CANON_MIN (0)
 #define CANON_MAX (180)
 #define CALIBRATION_MS (1000)
 #define CANON_STRENGTH (49)
-#define UPDATE_MS (100)
+#define UPDATE_MS (300)
 
 Button start_btn(START_GAME_PIN);
 Button aiming_btn(AIMING_BTN_PIN);
 Button launcher_btn(LAUNCHER_BTN_PIN);
 
-Timer launcher_timer;
-Timer reset_timer;
+Timer launcher_timer;  //a "delay" after releasing the second button and before shooting (for canon motor to reach its speed)
+Timer reset_timer;     //resets canon after shooting a ball
+Timer strength_timer;  //updates the canon's strength and led_bar
 
 ClaweeServo aiming_servo(SERVO_UPDATE_MS);
 ClaweeServo magazine_servo(SERVO_UPDATE_MS);  // The time interval here doesn't really matter
 Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 Servo ESC;
 
-uint32_t last_update;
 uint8_t led_bar = 0;
 uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 uint8_t increment = 1;
 uint8_t strength = CANON_MIN;
+uint32_t test = 0x2B;
 
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -131,21 +129,20 @@ void canon_begin() {
 }
 
 void canon_update() {
-    if (millis() - last_update > UPDATE_MS * 3) {
-        last_update = millis();
-        strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
-        strength_bar.show();
-        led_bar += increment;
-        if (led_bar <= 0 || led_bar >= 7) increment = -increment;
-        if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
-        // Serial.print("led bar: ");
-        // Serial.print(led_bar);
+    noInterrupts();
+    strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
+    strength_bar.show();
+    led_bar += increment;
+    if (led_bar <= 0 || led_bar >= 7) increment = -increment;
+    if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
+    // Serial.print("led bar: ");
+    // Serial.print(led_bar);
 
-        (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
-        ESC.write(strength);
-        // Serial.print(" Canon strength: ");
-        // Serial.println(strength);
-    }
+    (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
+    ESC.write(strength);
+    // Serial.print(" Canon strength: ");
+    // Serial.println(strength);
+    interrupts();
 }
 
 void setup() {
@@ -160,7 +157,10 @@ void setup() {
     launcher_timer.setTimeout(LAUNCHER_DELAY_MS);
 
     reset_timer.setCallback(reset_cb);
-    reset_timer.setTimeout(LAUNCHER_DELAY_MS);
+    reset_timer.setTimeout(RESET_DELAY_MS);
+
+    strength_timer.setCallback(canon_update);
+    strength_timer.setInterval(UPDATE_MS);
 
     aiming_servo.Attach(AIMING_SERVO_PIN);
     aiming_servo.Restart();
@@ -197,9 +197,21 @@ void loop() {
     if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
-    if (!digitalRead(LAUNCHER_BTN_PIN)) canon_update();
+    if (!digitalRead(LAUNCHER_BTN_PIN) && !strength_timer.isRunning()) strength_timer.start();
 
-    if (launcher_btn.released()) launcher_timer.start();
+    if (launcher_btn.released() && strength_timer.isRunning()) {
+        launcher_timer.start();
+        strength_timer.stop();
+    }
+
+    //////////////////////////////
+    if (test != 0x2B) {
+        for (uint8_t i = 0; i <= 8; i++) {
+            strength_bar.setPixelColor(i, 0xff0000);
+            strength_bar.show();
+        }
+    }
+    /////////////////////////////
 
     (analogRead(MAGAZINE_SENSOR_PIN) <= MAGAZINE_SENSOR_LIMIT) ? digitalWrite(MAGAZINE_MOTOR_PIN, LOW) : digitalWrite(MAGAZINE_MOTOR_PIN, HIGH);
     winning_check();
