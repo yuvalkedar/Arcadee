@@ -58,10 +58,10 @@ Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 Servo ESC;
 
 //FIXME: here are the variables which belong to canon_update()
-uint8_t led_bar = 0;
-uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
-uint8_t increment = 1;
-uint8_t strength = CANON_MIN;
+volatile uint8_t led_bar = 0;
+volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
+// uint8_t increment = 1; // Only if it ever going to be different than 1?
+// uint8_t strength = CANON_MIN; // No need for it, it seems
 uint32_t test = 0x2B;
 
 void limit_switches(bool state) {
@@ -129,20 +129,31 @@ void canon_begin() {
 }
 
 void canon_update() {  //FIXME: The problem is here. I thought that noInterrupts() & interrupts() will fix the issue since Arduino Forum suggested to use it instead of atomicblock.
-    noInterrupts();
+    // noInterrupts(); // INFO: No need, it's already inside the Adafruit_NeoPixel (right click on `show` and scroll down a bit)
     strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
     strength_bar.show();
-    led_bar += increment;
-    if (led_bar <= 0 || led_bar >= 7) increment = -increment;
-    if (led_bar <= 7) strength_bar.setPixelColor(led_bar + 1, 0x00);
+
+    // led_bar += strength;  // If it will always be 1, stick with ++led_bar below
+
+    if (++led_bar >= NUM_PIXELS) {
+        led_bar = NUM_PIXELS - 1;
+    }
+    // INFO: Why were you checking for <= 0, it is an uint8_t! getting below zero there ... would have been a cause of the issue
+
+    // NOTICE:  Why are you doing this? when are actually turning on a led_bar + 1 ?
+    // No need for it as I see it ... but I might be wrong
+    // strength_bar.setPixelColor(led_bar + 1, 0x00);
+
     // Serial.print("led bar: ");
     // Serial.print(led_bar);
 
-    (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
-    ESC.write(strength);
+    // Why this weird code style?
+    // (led_bar <= 5) ? strength = CANON_STRENGTH : strength = CANON_STRENGTH + 1;
+    // INFO: Only two power modes? if yes, no need for the variable
+    ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
     // Serial.print(" Canon strength: ");
     // Serial.println(strength);
-    interrupts();
+    // interrupts(); // INFO: No need, it's already inside the Adafruit_NeoPixel (right click on `show` and scroll down a bit)
 }
 
 void setup() {
