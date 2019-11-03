@@ -57,7 +57,6 @@ ClaweeServo magazine_servo(SERVO_UPDATE_MS);  // The time interval here doesn't 
 Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 Servo ESC;
 
-//FIXME: here are the variables which belong to canon_update()
 volatile uint8_t led_bar = 0;
 volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 // uint8_t increment = 1; // Only if it ever going to be different than 1?
@@ -72,7 +71,7 @@ void limit_switches(bool state) {
 void winning_check() {
     if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) {
         digitalWrite(WINNING_PIN, HIGH);
-        Serial.println(F("Congrats son, you might be the next Kobe Bryant!"));
+        // Serial.println(F("Congrats son, you might be the next Kobe Bryant!"));
     } else {
         digitalWrite(WINNING_PIN, LOW);
         // Serial.println(F("FUCKKK"));
@@ -128,8 +127,7 @@ void canon_begin() {
     delay(CALIBRATION_MS);
 }
 
-void canon_update() {  //FIXME: The problem is here. I thought that noInterrupts() & interrupts() will fix the issue since Arduino Forum suggested to use it instead of atomicblock.
-    // noInterrupts(); // INFO: No need, it's already inside the Adafruit_NeoPixel (right click on `show` and scroll down a bit)
+void canon_update() {
     strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
     strength_bar.show();
 
@@ -153,7 +151,6 @@ void canon_update() {  //FIXME: The problem is here. I thought that noInterrupts
     ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
     // Serial.print(" Canon strength: ");
     // Serial.println(strength);
-    // interrupts(); // INFO: No need, it's already inside the Adafruit_NeoPixel (right click on `show` and scroll down a bit)
 }
 
 void setup() {
@@ -170,7 +167,7 @@ void setup() {
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_DELAY_MS);
 
-    strength_timer.setCallback(canon_update);  //FIXME:
+    strength_timer.setCallback(canon_update);
     strength_timer.setInterval(UPDATE_MS);
 
     aiming_servo.Attach(AIMING_SERVO_PIN);
@@ -208,7 +205,7 @@ void loop() {
     if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(AIMING_BTN_PIN)) aiming_servo.Update();
-    if (!digitalRead(LAUNCHER_BTN_PIN) && !strength_timer.isRunning()) strength_timer.start();  //FIXME: look at strength_timer. I spoke with the Timer library creator and he suggested me to add the isRunning() condition. It helped, but not enough.
+    if (!digitalRead(LAUNCHER_BTN_PIN) && !strength_timer.isRunning()) strength_timer.start();
 
     if (launcher_btn.released() && strength_timer.isRunning()) {
         launcher_timer.start();
