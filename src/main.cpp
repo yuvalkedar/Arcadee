@@ -12,9 +12,9 @@
 
 #include <Adafruit_NeoPixel.h>
 #include <Button.h>  // https://github.com/madleech/Button
-#include <timer.h>   // https://github.com/brunocalou/Timer
-#include <timerManager.h>
 #include <Servo.h>
+#include <timer.h>  // https://github.com/brunocalou/Timer
+#include <timerManager.h>
 
 #define LAUNCHER_BTN_PIN (4)  // Right pin in the RPi (GPIO18)
 #define LAUNCHER_PIN (3)
@@ -28,7 +28,7 @@
 #define LED_BAR_PIN (A0)          // D14
 #define MAGAZINE_SENSOR_PIN (A1)  // D15
 #define BASKET_SENSOR_PIN (A2)    // D16
-#define MAGAZINE_BLOWER_PIN (A5)   // D19 = air blower
+#define MAGAZINE_BLOWER_PIN (A5)  // D19 = air blower
 
 #define NUM_PIXELS (8)
 #define GAME_TIME (20000)  // in milliseconds
@@ -44,7 +44,7 @@
 #define LED_BAR_UPDATE_MS (300)
 #define AIMING_UPDATE_MS (40)
 #define AIMING_SERVO_MIN (87)
-#define AIMING_SERVO_MAX (161)
+#define AIMING_SERVO_MAX (145)
 #define MAGAZINE_LOADING_POSITION (90)
 #define MAGAZINE_RESTART_POSITION (180)
 
@@ -55,7 +55,7 @@ Button launcher_btn(LAUNCHER_BTN_PIN);
 Timer launcher_timer;  //a "delay" after releasing the second button and before shooting (for canon motor to reach its speed)
 Timer reset_timer;     //resets canon after shooting a ball
 Timer strength_timer;  //updates the canon's strength and led_bar
-Timer aiming_timer;  //updates the canon's position
+Timer aiming_timer;    //updates the canon's position
 
 Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
 Servo ESC;
@@ -170,11 +170,9 @@ void setup() {
 
     strength_timer.setCallback(canon_update);
     strength_timer.setInterval(LED_BAR_UPDATE_MS);
-    
+
     aiming_timer.setCallback(aiming_update);
     aiming_timer.setInterval(AIMING_UPDATE_MS);
-
-
 
     pinMode(LAUNCHER_BTN_PIN, INPUT);
     pinMode(AIMING_BTN_PIN, INPUT);
@@ -189,7 +187,6 @@ void setup() {
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
     limit_switches(0);
 
-
     Serial.println(F(
         "_______________________________\n"
         "\n"
@@ -202,7 +199,7 @@ void setup() {
 
 void loop() {
     // if (check_ball_loaded()) {
-        if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+    if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
     // }
     if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
