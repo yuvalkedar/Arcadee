@@ -83,6 +83,8 @@ void winning_check() {
 }
 
 void game_start() {  // resets all parameters
+    aiming.attach(AIMING_SERVO_PIN);
+    magazine.attach(MAGAZINE_SERVO_PIN);
     limit_switches(0);
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
@@ -100,6 +102,8 @@ void reset_cb() {
     led_bar = 0;
     strength_bar.clear();
     strength_bar.show();
+    aiming.detach();
+    magazine.detach();
 }
 
 void launcher_cb() {  // when launcher button released
