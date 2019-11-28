@@ -43,7 +43,7 @@
 #define CANON_STRENGTH (49)
 #define LED_BAR_UPDATE_MS (300)
 #define AIMING_UPDATE_MS (40)
-#define AIMING_SERVO_MIN (87)
+#define AIMING_SERVO_MIN (20)
 #define AIMING_SERVO_MAX (145)
 #define MAGAZINE_LOADING_POSITION (90)
 #define MAGAZINE_RESTART_POSITION (180)
@@ -146,6 +146,10 @@ void canon_update() {
 
 void aiming_update() {
     if (--position <= AIMING_SERVO_MIN) position = AIMING_SERVO_MIN + 1;
+    //TODO: consider adding the next line
+    // if (position == AIMING_SERVO_MIN) position = AIMING_SERVO_MIN;
+    // OR (this one looks better)
+    //if (--position <= AIMING_SERVO_MIN - 1) position = AIMING_SERVO_MIN + 1;
     aiming.write(position);
 }
 
@@ -157,6 +161,7 @@ void setup() {
     aiming_btn.begin();
     strength_bar.begin();
 
+    //TODO: add attach and detach when a game starts and ends.
     aiming.attach(AIMING_SERVO_PIN);
     aiming.write(AIMING_SERVO_MAX);  // restart aiming servo position
     magazine.attach(MAGAZINE_SERVO_PIN);
