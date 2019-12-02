@@ -10,26 +10,26 @@
 */
 
 #include <Button.h>  // https://github.com/madleech/Button
-#include <timer.h>   // https://github.com/brunocalou/Timer
-#include <timerManager.h>
 #include <Servo.h>
+#include <timer.h>  // https://github.com/brunocalou/Timer
+#include <timerManager.h>
 
 //TODO: change pin numbers
-#define YAW_BTN_PIN (4)  // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
-#define PITCH_BTN_PIN (2)  // Front pin in the RPi (GPIO17) (UP & DOWN)
-#define LAUNCHER_MOTOR_PIN (3)  // shooting motor
-#define MAGAZINE_MOTOR_PIN (6)  // ball loading motor
+#define YAW_BTN_PIN (4)          // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define PITCH_BTN_PIN (2)        // Front pin in the RPi (GPIO17) (UP & DOWN)
+#define LAUNCHER_MOTOR_PIN (10)  // shooting motor
+#define MAGAZINE_MOTOR_PIN (9)   // ball loading motor
 #define YAW_SERVO_PIN (5)
-#define PITCH_SERVO_PIN (5)
-#define WINNING_SENSOR_PIN (7)    // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
-#define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
-#define LIMIT_SWITCH_1_PIN (13)   // limit switch f/b pin in the RPi (GPIO16)
+#define PITCH_SERVO_PIN (6)
+#define WINNING_SENSOR_PIN (7)   // winning switch pin in the RPi (GPIO12)
+#define START_GAME_PIN (8)       // coin switch pin in the RPi (GPIO25)
+#define LIMIT_SWITCH_2_PIN (12)  // limit switch r/l pin in the RPi (GPIO20)
+#define LIMIT_SWITCH_1_PIN (13)  // limit switch f/b pin in the RPi (GPIO16)
 
 #define GAME_TIME (20000)  // in milliseconds
 #define YAW_UPDATE_MS (40)
 #define PITCH_UPDATE_MS (40)
-#define RESET_GAME_MS (1500)     // TODO: change this interval
+#define RESET_GAME_MS (1500)  // TODO: change this interval
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
 #define PITCH_RESTART_POSITION (180)
@@ -41,7 +41,7 @@ Button start_btn(START_GAME_PIN);
 Button yaw_btn(YAW_BTN_PIN);
 Button pitch_btn(PITCH_BTN_PIN);
 
-Timer reset_timer;     //resets the canon after shooting a ball
+Timer reset_timer;  //resets the canon after shooting a ball
 Timer yaw_update;
 Timer pitch_update;
 
@@ -92,8 +92,6 @@ void reset_cb() {
     yaw.write(pitch_position);  // restart pitch position
 }
 
-
-
 void yaw_update() {
     // strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
     // strength_bar.show();
@@ -126,7 +124,7 @@ void setup() {
 
     yaw_update.setCallback(yaw_update);
     yaw_update.setInterval(YAW_UPDATE_MS);
-    
+
     pitch_update.setCallback(pitch_update);
     pitch_update.setInterval(PITCH_UPDATE_MS);
 
@@ -161,8 +159,8 @@ void loop() {
     if (yaw_btn.released() && yaw_update.isRunning()) yaw_update.stop();
 
     if (!digitalRead(PITCH_BTN_PIN) && !pitch_update.isRunning()) pitch_update.start();
-        
-    if (pitch_btn.released() && pitch_update.isRunning()) pitch_update.stop(); //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
+
+    if (pitch_btn.released() && pitch_update.isRunning()) pitch_update.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
 
     winning_check();
     TimerManager::instance().update();
