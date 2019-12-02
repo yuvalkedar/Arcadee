@@ -83,8 +83,6 @@ void winning_check() {
 }
 
 void game_start() {  // resets all parameters
-    aiming.attach(AIMING_SERVO_PIN);
-    magazine.attach(MAGAZINE_SERVO_PIN);
     limit_switches(0);
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
@@ -102,8 +100,6 @@ void reset_cb() {
     led_bar = 0;
     strength_bar.clear();
     strength_bar.show();
-    aiming.detach();
-    magazine.detach();
 }
 
 void launcher_cb() {  // when launcher button released
@@ -207,9 +203,9 @@ void setup() {
 }
 
 void loop() {
-    // if (check_ball_loaded()) {
-    if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
-    // }
+    if (check_ball_loaded()) {
+        if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+    }
     if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(AIMING_BTN_PIN) && !aiming_timer.isRunning()) aiming_timer.start();
@@ -223,5 +219,6 @@ void loop() {
 
     (analogRead(MAGAZINE_SENSOR_PIN) <= MAGAZINE_SENSOR_LIMIT) ? digitalWrite(MAGAZINE_BLOWER_PIN, LOW) : digitalWrite(MAGAZINE_BLOWER_PIN, HIGH);
     winning_check();
+
     TimerManager::instance().update();
 }
