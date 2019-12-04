@@ -8,6 +8,8 @@
 	
 	Arduino Nano communicates with RPi.
 	RPi sends button press commands (via app) to the Arduino, who sends commands to the machine.
+    
+    Working version - without sweaping the aiming position.
 */
 
 #include <Adafruit_NeoPixel.h>
