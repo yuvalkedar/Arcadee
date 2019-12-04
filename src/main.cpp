@@ -9,7 +9,7 @@
 	Arduino Nano communicates with RPi.
 	RPi sends button press commands (via app) to the Arduino, who sends commands to the machine.
     
-    Working version - without sweaping the aiming position.
+    Working version - without sweeping the aiming position.
 */
 
 #include <Adafruit_NeoPixel.h>
@@ -68,6 +68,7 @@ volatile uint8_t led_bar = 0;
 volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 
 volatile uint8_t position;
+int increment = 1;
 
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -146,13 +147,18 @@ void canon_update() {
     ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
 }
 
-void aiming_update() {
+/*
+void aiming_update() {  // WITHOUT SWEEP
     if (--position <= AIMING_SERVO_MIN) position = AIMING_SERVO_MIN + 1;
-    //TODO: consider adding the next line
-    // if (position == AIMING_SERVO_MIN) position = AIMING_SERVO_MIN;
-    // OR (this one looks better)
-    //if (--position <= AIMING_SERVO_MIN - 1) position = AIMING_SERVO_MIN + 1;
     aiming.write(position);
+}
+*/
+
+void aiming_update() {  // WITH SWEEP
+    position -= increment;
+    aiming.write(position);
+    if (position <= AIMING_SERVO_MIN || position - 1 >= AIMING_SERVO_MAX) increment = -increment;
+    Serial.println(position);
 }
 
 void setup() {
