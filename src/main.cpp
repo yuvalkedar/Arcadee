@@ -92,7 +92,7 @@ void reset_cb() {
     yaw.write(pitch_position);  // restart pitch position
 }
 
-void yaw_update() {
+void yaw_update() {  //TODO: add algorithm
     // strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
     // strength_bar.show();
 
@@ -103,7 +103,7 @@ void yaw_update() {
     // ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
 }
 
-void pitch_update() {
+void pitch_update() {  //TODO: add algorithm
     // if (--position <= AIMING_SERVO_MIN) position = AIMING_SERVO_MIN + 1;
     // aiming.write(position);
 }
