@@ -17,12 +17,12 @@
 //TODO: change pin numbers
 #define YAW_BTN_PIN (4)          // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define PITCH_BTN_PIN (2)        // Front pin in the RPi (GPIO17) (UP & DOWN)
-#define LAUNCHER_MOTOR_PIN (10)  // shooting motor
-#define MAGAZINE_MOTOR_PIN (9)   // ball loading motor
+#define LAUNCHER_MOTOR_PIN (11)  // shooting motor
+#define MAGAZINE_MOTOR_PIN (10)  // ball loading motor
 #define YAW_SERVO_PIN (5)
 #define PITCH_SERVO_PIN (6)
-#define WINNING_SENSOR_PIN (7)   // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (8)       // coin switch pin in the RPi (GPIO25)
+#define WINNING_SENSOR_PIN (8)   // winning switch pin in the RPi (GPIO12)
+#define START_GAME_PIN (7)       // coin switch pin in the RPi (GPIO25)
 #define LIMIT_SWITCH_2_PIN (12)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (13)  // limit switch f/b pin in the RPi (GPIO16)
 
