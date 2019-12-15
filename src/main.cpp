@@ -42,8 +42,8 @@ Button yaw_btn(YAW_BTN_PIN);
 Button pitch_btn(PITCH_BTN_PIN);
 
 Timer reset_timer;  //resets the canon after shooting a ball
-Timer yaw_update;
-Timer pitch_update;
+Timer yaw_update_timer;
+Timer pitch_update_timer;
 
 Servo yaw;
 Servo pitch;
@@ -122,11 +122,11 @@ void setup() {
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
 
-    yaw_update.setCallback(yaw_update);
-    yaw_update.setInterval(YAW_UPDATE_MS);
+    yaw_update_timer.setCallback(yaw_update);
+    yaw_update_timer.setInterval(YAW_UPDATE_MS);
 
-    pitch_update.setCallback(pitch_update);
-    pitch_update.setInterval(PITCH_UPDATE_MS);
+    pitch_update_timer.setCallback(pitch_update);
+    pitch_update_timer.setInterval(PITCH_UPDATE_MS);
 
     pinMode(YAW_BTN_PIN, INPUT);
     pinMode(PITCH_BTN_PIN, INPUT);
@@ -155,13 +155,13 @@ void loop() {
 
     if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
 
-    if (!digitalRead(YAW_BTN_PIN) && !yaw_update.isRunning()) yaw_update.start();
-    if (yaw_btn.released() && yaw_update.isRunning()) yaw_update.stop();
+    if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) yaw_update_timer.start();
+    if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
 
-    if (!digitalRead(PITCH_BTN_PIN) && !pitch_update.isRunning()) pitch_update.start();
+    if (!digitalRead(PITCH_BTN_PIN) && !pitch_update_timer.isRunning()) pitch_update_timer.start();
 
-    if (pitch_btn.released() && pitch_update.isRunning()) pitch_update.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
+    if (pitch_btn.released() && pitch_update_timer.isRunning()) pitch_update_timer.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
 
-    winning_check();
+    // winning_check();
     TimerManager::instance().update();
 }
