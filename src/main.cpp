@@ -114,6 +114,7 @@ void loop() {
     if (release_ball_btn.released()) {
         release_servo.write(RELEASING_POSITION);
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        reset_timer.start();
     }
 
     TimerManager::instance().update();
