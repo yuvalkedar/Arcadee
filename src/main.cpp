@@ -14,42 +14,29 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
-//TODO: change pin numbers
-#define YAW_BTN_PIN (4)          // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
-#define PITCH_BTN_PIN (2)        // Front pin in the RPi (GPIO17) (UP & DOWN)
-#define LAUNCHER_MOTOR_PIN (11)  // shooting motor
-#define MAGAZINE_MOTOR_PIN (10)  // ball loading motor
-#define YAW_SERVO_PIN (5)
-#define PITCH_SERVO_PIN (6)
-#define WINNING_SENSOR_PIN (8)   // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (7)       // coin switch pin in the RPi (GPIO25)
-#define LIMIT_SWITCH_2_PIN (12)  // limit switch r/l pin in the RPi (GPIO20)
-#define LIMIT_SWITCH_1_PIN (13)  // limit switch f/b pin in the RPi (GPIO16)
+#define LOAD_BALL_BTN_PIN (2)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define RELEASE_BALL_BTN_PIN (3)  // Front pin in the RPi (GPIO17) (UP & DOWN)
+#define WINNING_SENSOR_PIN (4)    // winning switch pin in the RPi (GPIO12)
+#define LOAD_BALL_SERVO_PIN (5)
+#define RELEASE_BALL_SERVO_PIN (6)
+#define START_GAME_PIN (7)      // coin switch pin in the RPi (GPIO25)
+#define LIMIT_SWITCH_2_PIN (8)  // limit switch r/l pin in the RPi (GPIO20)
+#define LIMIT_SWITCH_1_PIN (9)  // limit switch f/b pin in the RPi (GPIO16)
 
-#define GAME_TIME (20000)  // in milliseconds
-#define YAW_UPDATE_MS (40)
-#define PITCH_UPDATE_MS (40)
-#define RESET_GAME_MS (1500)  // TODO: change this interval
-#define PITCH_MIN (0)
-#define PITCH_MAX (180)
-#define PITCH_RESTART_POSITION (180)
-#define YAW_MIN (0)
-#define YAW_MAX (180)
-#define YAW_RESTART_POSITION (180)
+#define RESET_GAME_MS (1500)
+#define LOADING_RESTART_POSITION (10)
+#define LOADING_POSITION (80)
+#define RELEASING_RESTART_POSITION (10)
+#define RELEASING_POSITION (80)
 
 Button start_btn(START_GAME_PIN);
-Button yaw_btn(YAW_BTN_PIN);
-Button pitch_btn(PITCH_BTN_PIN);
+Button load_ball_btn(LOAD_BALL_BTN_PIN);
+Button release_ball_btn(RELEASE_BALL_BTN_PIN);
 
 Timer reset_timer;  //resets the canon after shooting a ball
-Timer yaw_update;
-Timer pitch_update;
 
-Servo yaw;
-Servo pitch;
-
-volatile uint8_t yaw_position;
-volatile uint8_t pitch_position;
+Servo load_servo;
+Servo release_servo;
 
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -68,71 +55,39 @@ void winning_check() {
 }
 */
 
-// check if game_start() and reset_cb() are both needed
-
 void game_start() {  // resets all parameters
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     limit_switches(0);
 
-    yaw_position = YAW_RESTART_POSITION;
-    yaw.write(yaw_position);  // restart yaw position
-
-    pitch_position = PITCH_RESTART_POSITION;
-    yaw.write(pitch_position);  // restart pitch position
+    //NOTICE: might be redandent bc it's in the reset_cb
+    load_servo.write(LOADING_RESTART_POSITION);
+    release_servo.write(RELEASING_RESTART_POSITION);
 }
 
 void reset_cb() {
-    digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
-    digitalWrite(MAGAZINE_MOTOR_PIN, LOW);
-
-    yaw_position = YAW_RESTART_POSITION;
-    yaw.write(yaw_position);  // restart yaw position
-
-    pitch_position = PITCH_RESTART_POSITION;
-    yaw.write(pitch_position);  // restart pitch position
-}
-
-void yaw_update() {
-    // strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
-    // strength_bar.show();
-
-    // if (++led_bar >= NUM_PIXELS) {
-    //     led_bar = NUM_PIXELS - 1;
-    // }
-
-    // ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
-}
-
-void pitch_update() {
-    // if (--position <= AIMING_SERVO_MIN) position = AIMING_SERVO_MIN + 1;
-    // aiming.write(position);
+    limit_switches(0);
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
+    load_servo.write(LOADING_RESTART_POSITION);
+    release_servo.write(RELEASING_RESTART_POSITION);
 }
 
 void setup() {
     Serial.begin(115200);
     start_btn.begin();
-    yaw_btn.begin();
-    pitch_btn.begin();
+    load_ball_btn.begin();
+    release_ball_btn.begin();
 
-    yaw.attach(YAW_SERVO_PIN);
-    yaw.write(YAW_RESTART_POSITION);
-    pitch.attach(PITCH_SERVO_PIN);
-    pitch.write(PITCH_RESTART_POSITION);
+    load_servo.attach(LOAD_BALL_SERVO_PIN);
+    load_servo.write(LOADING_RESTART_POSITION);
+    release_servo.attach(RELEASE_BALL_SERVO_PIN);
+    release_servo.write(RELEASING_RESTART_POSITION);
 
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
 
-    yaw_update.setCallback(yaw_update);
-    yaw_update.setInterval(YAW_UPDATE_MS);
-
-    pitch_update.setCallback(pitch_update);
-    pitch_update.setInterval(PITCH_UPDATE_MS);
-
-    pinMode(YAW_BTN_PIN, INPUT);
-    pinMode(PITCH_BTN_PIN, INPUT);
+    pinMode(LOAD_BALL_BTN_PIN, INPUT);
+    pinMode(RELEASE_BALL_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
-    pinMode(LAUNCHER_MOTOR_PIN, OUTPUT);
-    pinMode(MAGAZINE_MOTOR_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 
@@ -143,7 +98,8 @@ void setup() {
     Serial.println(F(
         "________________________________\n"
         "\n"
-        "  N E R F G U N  M a c h i n e  \n"
+        "      A l w a y s   W i n       \n"
+        "         M a c h i n e          \n"
         "________________________________\n"
         "\n"
         "Made by KD Technology\n"
@@ -152,16 +108,13 @@ void setup() {
 
 void loop() {
     if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+    if (load_ball_btn.pressed() || release_ball_btn.pressed()) limit_switches(1);
 
-    if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
+    if (load_ball_btn.released()) load_servo.write(LOADING_POSITION);
+    if (release_ball_btn.released()) {
+        release_servo.write(RELEASING_POSITION);
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+    }
 
-    if (!digitalRead(YAW_BTN_PIN) && !yaw_update.isRunning()) yaw_update.start();
-    if (yaw_btn.released() && yaw_update.isRunning()) yaw_update.stop();
-
-    if (!digitalRead(PITCH_BTN_PIN) && !pitch_update.isRunning()) pitch_update.start();
-
-    if (pitch_btn.released() && pitch_update.isRunning()) pitch_update.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
-
-    winning_check();
     TimerManager::instance().update();
 }
