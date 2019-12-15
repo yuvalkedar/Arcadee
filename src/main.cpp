@@ -13,6 +13,7 @@
 #include <Servo.h>
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
+#include "Arduino.h"
 
 #define LOAD_BALL_BTN_PIN (2)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define RELEASE_BALL_BTN_PIN (3)  // Front pin in the RPi (GPIO17) (UP & DOWN)
@@ -42,18 +43,6 @@ void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
 }
-
-/*
-void winning_check() {
-    if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) {
-        digitalWrite(WINNING_SENSOR_PIN, HIGH);
-        // Serial.println(F("Congrats son, you might be the next Kobe Bryant!"));
-    } else {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
-        // Serial.println(F("FUCKKK"));
-    }
-}
-*/
 
 void game_start() {  // resets all parameters
     digitalWrite(WINNING_SENSOR_PIN, LOW);
