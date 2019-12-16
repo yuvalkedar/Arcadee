@@ -25,10 +25,10 @@
 #define LIMIT_SWITCH_1_PIN (9)  // limit switch f/b pin in the RPi (GPIO16)
 
 #define RESET_GAME_MS (1500)
-#define LOADING_RESTART_POSITION (10)
-#define LOADING_POSITION (80)
-#define RELEASING_RESTART_POSITION (10)
-#define RELEASING_POSITION (80)
+#define LOADING_RESTART_POSITION (6)
+#define LOADING_POSITION (180)
+#define RELEASING_RESTART_POSITION (140)
+#define RELEASING_POSITION (60)
 
 Button start_btn(START_GAME_PIN);
 Button load_ball_btn(LOAD_BALL_BTN_PIN);
@@ -99,8 +99,8 @@ void loop() {
     if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
     if (load_ball_btn.pressed() || release_ball_btn.pressed()) limit_switches(1);
 
-    if (load_ball_btn.released()) load_servo.write(LOADING_POSITION);
-    if (release_ball_btn.released()) {
+    if (!digitalRead(LOAD_BALL_BTN_PIN)) load_servo.write(LOADING_POSITION);
+    if (!digitalRead(RELEASE_BALL_BTN_PIN)) {
         release_servo.write(RELEASING_POSITION);
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         reset_timer.start();
