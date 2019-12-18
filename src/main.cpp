@@ -69,6 +69,7 @@ void reset_cb() {
     release_servo.write(RELEASING_RESTART_POSITION);
     digitalWrite(BLOWER_PIN, HIGH);
     is_sec_btn_pressed = 0;
+    game_timer.stop();
     blower_timer.start();
 }
 
@@ -79,6 +80,7 @@ void blower_cb() {
 void gameover_cb() { //fixes situations when user presses only first btn and game is over the game is stuck.
     if (is_sec_btn_pressed == 0) {
         release_servo.write(RELEASING_POSITION);
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
         delay_timer.start();
     }
 }
@@ -143,5 +145,6 @@ void loop() {
         reset_timer.start();
     }
 
+    Serial.println(is_sec_btn_pressed);
     TimerManager::instance().update();
 }
