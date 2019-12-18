@@ -26,18 +26,24 @@
 #define BLOWER_PIN (12)
 
 #define RESET_GAME_MS (1500)
-#define BLOWER_MS (5000)
+#define BLOWER_MS (8000)
+#define GAME_TIME_MS (20000)
+#define DELAY_MS    (2000)
 #define LOADING_RESTART_POSITION (6)
 #define LOADING_POSITION (180)
 #define RELEASING_RESTART_POSITION (140)
 #define RELEASING_POSITION (60)
 
+bool is_sec_btn_pressed = 0;
+
 Button start_btn(START_GAME_PIN);
 Button load_ball_btn(LOAD_BALL_BTN_PIN);
 Button release_ball_btn(RELEASE_BALL_BTN_PIN);
 
+Timer game_timer;   // counts the game time
 Timer reset_timer;   //resets the canon after shooting a ball
 Timer blower_timer;  //stops the blower when timer is over
+Timer delay_timer;
 
 Servo load_servo;
 Servo release_servo;
@@ -62,11 +68,19 @@ void reset_cb() {
     load_servo.write(LOADING_RESTART_POSITION);
     release_servo.write(RELEASING_RESTART_POSITION);
     digitalWrite(BLOWER_PIN, HIGH);
+    is_sec_btn_pressed = 0;
     blower_timer.start();
 }
 
 void blower_cb() {
     digitalWrite(BLOWER_PIN, LOW);
+}
+
+void gameover_cb() { //fixes situations when user presses only first btn and game is over the game is stuck.
+    if (is_sec_btn_pressed == 0) {
+        release_servo.write(RELEASING_POSITION);
+        delay_timer.start();
+    }
 }
 
 void setup() {
@@ -85,6 +99,12 @@ void setup() {
 
     blower_timer.setCallback(blower_cb);
     blower_timer.setTimeout(BLOWER_MS);
+
+    game_timer.setCallback(gameover_cb);
+    game_timer.setTimeout(GAME_TIME_MS);
+
+    delay_timer.setCallback(reset_cb);
+    delay_timer.setTimeout(DELAY_MS);
 
     pinMode(LOAD_BALL_BTN_PIN, INPUT);
     pinMode(RELEASE_BALL_BTN_PIN, INPUT);
@@ -109,14 +129,17 @@ void setup() {
 }
 
 void loop() {
-    //FIXME: if user presses only first btn and game is over the game is stuck.
-    if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+    if (start_btn.pressed()) {
+        game_start();  //based on 1000us of the coin pin
+        game_timer.start();
+    }
     if (load_ball_btn.pressed() || release_ball_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(LOAD_BALL_BTN_PIN)) load_servo.write(LOADING_POSITION);
     if (!digitalRead(RELEASE_BALL_BTN_PIN)) {
         release_servo.write(RELEASING_POSITION);
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        is_sec_btn_pressed = 1;
         reset_timer.start();
     }
 
