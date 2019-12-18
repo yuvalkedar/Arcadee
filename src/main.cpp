@@ -23,8 +23,10 @@
 #define START_GAME_PIN (7)      // coin switch pin in the RPi (GPIO25)
 #define LIMIT_SWITCH_2_PIN (8)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (9)  // limit switch f/b pin in the RPi (GPIO16)
+#define BLOWER_PIN (12)
 
 #define RESET_GAME_MS (1500)
+#define BLOWER_MS (5000)
 #define LOADING_RESTART_POSITION (6)
 #define LOADING_POSITION (180)
 #define RELEASING_RESTART_POSITION (140)
@@ -34,7 +36,8 @@ Button start_btn(START_GAME_PIN);
 Button load_ball_btn(LOAD_BALL_BTN_PIN);
 Button release_ball_btn(RELEASE_BALL_BTN_PIN);
 
-Timer reset_timer;  //resets the canon after shooting a ball
+Timer reset_timer;   //resets the canon after shooting a ball
+Timer blower_timer;  //stops the blower when timer is over
 
 Servo load_servo;
 Servo release_servo;
@@ -58,6 +61,12 @@ void reset_cb() {
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     load_servo.write(LOADING_RESTART_POSITION);
     release_servo.write(RELEASING_RESTART_POSITION);
+    digitalWrite(BLOWER_PIN, HIGH);
+    blower_timer.start();
+}
+
+void blower_cb() {
+    digitalWrite(BLOWER_PIN, LOW);
 }
 
 void setup() {
@@ -74,9 +83,13 @@ void setup() {
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
 
+    blower_timer.setCallback(blower_cb);
+    blower_timer.setTimeout(BLOWER_MS);
+
     pinMode(LOAD_BALL_BTN_PIN, INPUT);
     pinMode(RELEASE_BALL_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
+    pinMode(BLOWER_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 
@@ -96,6 +109,7 @@ void setup() {
 }
 
 void loop() {
+    //FIXME: if user presses only first btn and game is over the game is stuck.
     if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
     if (load_ball_btn.pressed() || release_ball_btn.pressed()) limit_switches(1);
 
