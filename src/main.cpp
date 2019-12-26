@@ -14,6 +14,13 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
+/*
+game start: home position for 2 servos, winning off, all motors off (blower, magazine, launcher), home sensors.
+first button: yaw update
+second button: pitch update, launcher on
+when released: ball loader (belt) on
+*/
+
 //TODO: change pin numbers
 #define YAW_BTN_PIN (4)          // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define PITCH_BTN_PIN (2)        // Front pin in the RPi (GPIO17) (UP & DOWN)
