@@ -32,7 +32,7 @@
 #define BTM_ROW_WIN_PIN (A2)
 
 #define YAW_UPDATE_MS (40)
-#define PITCH_UPDATE_MS (40)
+#define PITCH_UPDATE_MS (20)
 #define RESET_GAME_MS (1500)  // TODO: change this interval
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
@@ -77,7 +77,7 @@ void game_start() {  // resets all parameters
     yaw.write(yaw_position);  // restart yaw position
 
     pitch_position = PITCH_RESTART_POSITION;
-    yaw.write(pitch_position);  // restart pitch position
+    pitch.write(pitch_position);  // restart pitch position
 }
 
 void reset_cb() {
@@ -90,11 +90,11 @@ void reset_cb() {
     yaw.write(yaw_position);  // restart yaw position
 
     pitch_position = PITCH_RESTART_POSITION;
-    yaw.write(pitch_position);  // restart pitch position
+    pitch.write(pitch_position);  // restart pitch position
 }
 
 void yaw_update() {
-    if (--yaw_position <= YAW_MIN) pitch_position = PITCH_MIN + 1;  //TODO: change the "+1" to "+ defined parameter"
+    if (--yaw_position <= YAW_MIN) yaw_position = YAW_MIN + 1;  //TODO: change the "+1" to "+ defined parameter"
     yaw.write(yaw_position);
 }
 
