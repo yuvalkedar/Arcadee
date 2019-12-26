@@ -142,9 +142,9 @@ void setup() {
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
-    digitalWrite(BLOWER_MOTOR_PIN, LOW);
-    digitalWrite(BELT_MOTOR_PIN, LOW);
+    digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
+    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
+    digitalWrite(BELT_MOTOR_PIN, HIGH);
 
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
