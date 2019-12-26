@@ -41,7 +41,6 @@
 #define YAW_MAX (180)
 #define YAW_RESTART_POSITION (180)
 #define DELAY_MS (2000)
-#define BLOWING_MS (2000)
 
 Button start_btn(START_GAME_PIN);  //gets coin from the RPi
 Button yaw_btn(YAW_BTN_PIN);       // move "right"
@@ -53,8 +52,7 @@ Button btm_row(BTM_ROW_WIN_PIN);
 Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
-Timer delay_timer;   // timer to delay the blower's operation
-Timer blower_timer;  // turns the blower off after this timer's interval
+Timer delay_timer;  // timer to delay the blower's operation
 
 Servo yaw;
 Servo pitch;
@@ -106,11 +104,7 @@ void pitch_update() {
 
 void delay_cb() {
     digitalWrite(BLOWER_MOTOR_PIN, LOW);
-    blower_timer.start();  //starts the blower after the delay ends
-}
-
-void blower_cb() {
-    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
+    reset_timer.start();
 }
 
 void setup() {
@@ -135,9 +129,6 @@ void setup() {
 
     delay_timer.setCallback(delay_cb);  //timer to delay blower's operation
     delay_timer.setTimeout(DELAY_MS);
-
-    blower_timer.setCallback(blower_cb);
-    blower_timer.setInterval(BLOWING_MS);
 
     pinMode(TOP_ROW_WIN_PIN, INPUT);
     pinMode(MID_ROW_WIN_PIN, INPUT);
@@ -183,7 +174,7 @@ void loop() {
     }
 
     if (pitch_btn.released() && pitch_update_timer.isRunning()) {
-        pitch_update_timer.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
+        pitch_update_timer.stop();
         delay_timer.start();
         digitalWrite(BELT_MOTOR_PIN, LOW);
     }
