@@ -28,8 +28,8 @@
 #define RESET_GAME_MS (1500)
 #define BLOWER_MS (8000)
 #define GAME_TIME_MS (20000)
-#define DELAY_MS    (2000)
-#define LOADING_RESTART_POSITION (20)
+#define DELAY_MS (2000)
+#define LOADING_RESTART_POSITION (0)
 #define LOADING_POSITION (180)
 #define RELEASING_RESTART_POSITION (140)
 #define RELEASING_POSITION (60)
@@ -40,7 +40,7 @@ Button start_btn(START_GAME_PIN);
 Button load_ball_btn(LOAD_BALL_BTN_PIN);
 Button release_ball_btn(RELEASE_BALL_BTN_PIN);
 
-Timer game_timer;   // counts the game time
+Timer game_timer;    // counts the game time
 Timer reset_timer;   //resets the canon after shooting a ball
 Timer blower_timer;  //stops the blower when timer is over
 Timer delay_timer;
@@ -77,7 +77,7 @@ void blower_cb() {
     digitalWrite(BLOWER_PIN, LOW);
 }
 
-void gameover_cb() { //fixes situations when user presses only first btn and game is over the game is stuck.
+void gameover_cb() {  //fixes situations when user presses only first btn and game is over the game is stuck.
     if (is_sec_btn_pressed == 0) {
         release_servo.write(RELEASING_POSITION);
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
