@@ -81,6 +81,7 @@ void game_start() {  // resets all parameters
 }
 
 void reset_cb() {
+    limit_switches(0);
     digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
     digitalWrite(BLOWER_MOTOR_PIN, HIGH);
     digitalWrite(BELT_MOTOR_PIN, HIGH);
