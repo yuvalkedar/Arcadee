@@ -14,26 +14,23 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
-/*
-game start: home position for 2 servos, winning off, all motors off (blower, magazine, launcher), home sensors.
-first button: yaw update
-second button: pitch update, launcher on
-when released: ball loader (belt) on
-*/
-
+//NOTICE: Relay's state in HIGH when pin is LOW
 //TODO: change pin numbers
 #define YAW_BTN_PIN (4)          // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define PITCH_BTN_PIN (2)        // Front pin in the RPi (GPIO17) (UP & DOWN)
 #define LAUNCHER_MOTOR_PIN (11)  // shooting motor
-#define MAGAZINE_MOTOR_PIN (10)  // ball loading motor
+#define BLOWER_MOTOR_PIN (10)    // loads balls into the magazine
+#define BELT_MOTOR_PIN (9)       // loads balls into the launcher
 #define YAW_SERVO_PIN (5)
 #define PITCH_SERVO_PIN (6)
 #define WINNING_SENSOR_PIN (8)   // winning switch pin in the RPi (GPIO12)
 #define START_GAME_PIN (7)       // coin switch pin in the RPi (GPIO25)
 #define LIMIT_SWITCH_2_PIN (12)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (13)  // limit switch f/b pin in the RPi (GPIO16)
+#define TOP_ROW_WIN_PIN (A0)
+#define MID_ROW_WIN_PIN (A1)
+#define BTM_ROW_WIN_PIN (A2)
 
-#define GAME_TIME (20000)  // in milliseconds
 #define YAW_UPDATE_MS (40)
 #define PITCH_UPDATE_MS (40)
 #define RESET_GAME_MS (1500)  // TODO: change this interval
@@ -43,14 +40,21 @@ when released: ball loader (belt) on
 #define YAW_MIN (0)
 #define YAW_MAX (180)
 #define YAW_RESTART_POSITION (180)
+#define DELAY_MS (2000)
+#define BLOWING_MS (2000)
 
-Button start_btn(START_GAME_PIN);
-Button yaw_btn(YAW_BTN_PIN);
-Button pitch_btn(PITCH_BTN_PIN);
+Button start_btn(START_GAME_PIN);  //gets coin from the RPi
+Button yaw_btn(YAW_BTN_PIN);       // move "right"
+Button pitch_btn(PITCH_BTN_PIN);   // move "left"
+Button top_row(TOP_ROW_WIN_PIN);   // when all the clowns in a row are down the arduino will get input HIGH
+Button mid_row(MID_ROW_WIN_PIN);
+Button btm_row(BTM_ROW_WIN_PIN);
 
-Timer reset_timer;  //resets the canon after shooting a ball
+Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
+Timer delay_timer;   // timer to delay the blower's operation
+Timer blower_timer;  // turns the blower off after this timer's interval
 
 Servo yaw;
 Servo pitch;
@@ -58,24 +62,14 @@ Servo pitch;
 volatile uint8_t yaw_position;
 volatile uint8_t pitch_position;
 
-void limit_switches(bool state) {
+void limit_switches(bool state) {  //controls home sensors
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
 }
 
-/*
 void winning_check() {
-    if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) {
-        digitalWrite(WINNING_SENSOR_PIN, HIGH);
-        // Serial.println(F("Congrats son, you might be the next Kobe Bryant!"));
-    } else {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
-        // Serial.println(F("FUCKKK"));
-    }
+    (top_row.pressed() || mid_row.pressed() || btm_row.pressed()) ? digitalWrite(WINNING_SENSOR_PIN, HIGH) : digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
-*/
-
-// check if game_start() and reset_cb() are both needed
 
 void game_start() {  // resets all parameters
     digitalWrite(WINNING_SENSOR_PIN, LOW);
@@ -89,8 +83,9 @@ void game_start() {  // resets all parameters
 }
 
 void reset_cb() {
-    digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
-    digitalWrite(MAGAZINE_MOTOR_PIN, LOW);
+    digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
+    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
+    digitalWrite(BELT_MOTOR_PIN, HIGH);
 
     yaw_position = YAW_RESTART_POSITION;
     yaw.write(yaw_position);  // restart yaw position
@@ -99,20 +94,23 @@ void reset_cb() {
     yaw.write(pitch_position);  // restart pitch position
 }
 
-void yaw_update() {  //TODO: add algorithm
-    // strength_bar.setPixelColor(led_bar, led_bar_colour[led_bar]);
-    // strength_bar.show();
-
-    // if (++led_bar >= NUM_PIXELS) {
-    //     led_bar = NUM_PIXELS - 1;
-    // }
-
-    // ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
+void yaw_update() {
+    if (--yaw_position <= YAW_MIN) pitch_position = PITCH_MIN + 1;  //TODO: change the "+1" to "+ defined parameter"
+    yaw.write(yaw_position);
 }
 
-void pitch_update() {  //TODO: add algorithm
-    // if (--position <= AIMING_SERVO_MIN) position = AIMING_SERVO_MIN + 1;
-    // aiming.write(position);
+void pitch_update() {
+    if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
+    pitch.write(pitch_position);
+}
+
+void delay_cb() {
+    digitalWrite(BLOWER_MOTOR_PIN, LOW);
+    blower_timer.start();  //starts the blower after the delay ends
+}
+
+void blower_cb() {
+    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
 }
 
 void setup() {
@@ -135,13 +133,27 @@ void setup() {
     pitch_update_timer.setCallback(pitch_update);
     pitch_update_timer.setInterval(PITCH_UPDATE_MS);
 
+    delay_timer.setCallback(delay_cb);  //timer to delay blower's operation
+    delay_timer.setTimeout(DELAY_MS);
+
+    blower_timer.setCallback(blower_cb);
+    blower_timer.setInterval(BLOWING_MS);
+
+    pinMode(TOP_ROW_WIN_PIN, INPUT);
+    pinMode(MID_ROW_WIN_PIN, INPUT);
+    pinMode(BTM_ROW_WIN_PIN, INPUT);
     pinMode(YAW_BTN_PIN, INPUT);
     pinMode(PITCH_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
     pinMode(LAUNCHER_MOTOR_PIN, OUTPUT);
-    pinMode(MAGAZINE_MOTOR_PIN, OUTPUT);
+    pinMode(BLOWER_MOTOR_PIN, OUTPUT);
+    pinMode(BELT_MOTOR_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
+
     digitalWrite(WINNING_SENSOR_PIN, LOW);
+    digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
+    digitalWrite(BLOWER_MOTOR_PIN, LOW);
+    digitalWrite(BELT_MOTOR_PIN, LOW);
 
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
@@ -165,10 +177,17 @@ void loop() {
     if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) yaw_update_timer.start();
     if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
 
-    if (!digitalRead(PITCH_BTN_PIN) && !pitch_update_timer.isRunning()) pitch_update_timer.start();
+    if (!digitalRead(PITCH_BTN_PIN) && !pitch_update_timer.isRunning()) {
+        pitch_update_timer.start();
+        digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
+    }
 
-    if (pitch_btn.released() && pitch_update_timer.isRunning()) pitch_update_timer.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
+    if (pitch_btn.released() && pitch_update_timer.isRunning()) {
+        pitch_update_timer.stop();  //TODO: load balls (with timer?), shoot, and then call reset_timer.start();
+        delay_timer.start();
+        digitalWrite(BELT_MOTOR_PIN, LOW);
+    }
 
-    // winning_check();
+    winning_check();
     TimerManager::instance().update();
 }
