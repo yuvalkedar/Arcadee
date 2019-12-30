@@ -14,13 +14,15 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
+// #define DEBUG    // TODO: add ifdef for debug to show targets positions in the serial monitor
+
 //NOTICE: Relay's state in HIGH when pin is LOW
-//TODO: change pin numbers
-#define YAW_BTN_PIN (4)          // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
-#define PITCH_BTN_PIN (2)        // Front pin in the RPi (GPIO17) (UP & DOWN)
-#define LAUNCHER_MOTOR_PIN (11)  // shooting motor
-#define BLOWER_MOTOR_PIN (10)    // loads balls into the magazine
-#define BELT_MOTOR_PIN (9)       // loads balls into the launcher
+#define YAW_BTN_PIN (4)            // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define PITCH_BTN_PIN (2)          // Front pin in the RPi (GPIO17) (UP & DOWN)
+#define CRAZY_CLOWN_START_PIN (3)  // the Crazy Clown machine needs to get a btn press after we enter coin and before the game starts
+#define LAUNCHER_MOTOR_PIN (11)    // shooting motor
+#define BLOWER_MOTOR_PIN (10)      // loads balls into the magazine
+#define BELT_MOTOR_PIN (9)         // loads balls into the launcher
 #define YAW_SERVO_PIN (5)
 #define PITCH_SERVO_PIN (6)
 #define WINNING_SENSOR_PIN (8)   // winning switch pin in the RPi (GPIO12)
@@ -30,6 +32,12 @@
 #define TOP_ROW_WIN_PIN (A0)
 #define MID_ROW_WIN_PIN (A1)
 #define BTM_ROW_WIN_PIN (A2)
+
+//clowns - count from left to right and top to bottom
+#define CLOWN_1 (47)
+#define CLOWN_2 (46)
+#define CLOWN_3 (45)
+#define CLOWN_4 (44)
 
 #define YAW_UPDATE_MS (40)
 #define PITCH_UPDATE_MS (20)
@@ -45,9 +53,6 @@
 Button start_btn(START_GAME_PIN);  //gets coin from the RPi
 Button yaw_btn(YAW_BTN_PIN);       // move "right"
 Button pitch_btn(PITCH_BTN_PIN);   // move "left"
-Button top_row(TOP_ROW_WIN_PIN);   // when all the clowns in a row are down the arduino will get input HIGH
-Button mid_row(MID_ROW_WIN_PIN);
-Button btm_row(BTM_ROW_WIN_PIN);
 
 Timer reset_timer;
 Timer yaw_update_timer;
@@ -60,16 +65,28 @@ Servo pitch;
 volatile uint8_t yaw_position;
 volatile uint8_t pitch_position;
 
+bool clowns[3][5] = {{CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}};
+
 void limit_switches(bool state) {  //controls home sensors
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
 }
 
 void winning_check() {
-    (top_row.pressed() || mid_row.pressed() || btm_row.pressed()) ? digitalWrite(WINNING_SENSOR_PIN, HIGH) : digitalWrite(WINNING_SENSOR_PIN, LOW);
+    // (top_row.pressed() || mid_row.pressed() || btm_row.pressed()) ? digitalWrite(WINNING_SENSOR_PIN, HIGH) : digitalWrite(WINNING_SENSOR_PIN, LOW);
+    if (CLOWN_1 && CLOWN_2 && CLOWN_3 && CLOWN_4) {
+        digitalWrite(TOP_ROW_WIN_PIN, HIGH);  //NOTICE: It will need a toggle and also to toggle CRAZY_CLOWN_START_PIN
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+    }
 }
 
-void game_start() {  // resets all parameters
+void toggle_pin(uint8_t pin_num) {
+    digitalWrite(pin_num, HIGH);  // toggling this pin to start a game...
+    digitalWrite(pin_num, LOW);
+}
+
+void game_start() {                     // resets all parameters
+    toggle_pin(CRAZY_CLOWN_START_PIN);  // toggling this pin to start a game...
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     limit_switches(0);
 
@@ -131,12 +148,18 @@ void setup() {
     delay_timer.setCallback(delay_cb);  //timer to delay blower's operation
     delay_timer.setTimeout(DELAY_MS);
 
-    pinMode(TOP_ROW_WIN_PIN, INPUT);
-    pinMode(MID_ROW_WIN_PIN, INPUT);
-    pinMode(BTM_ROW_WIN_PIN, INPUT);
+    //TODO: Add for loop to define inputs and outputs
     pinMode(YAW_BTN_PIN, INPUT);
     pinMode(PITCH_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
+    pinMode(CLOWN_1, INPUT);
+    pinMode(CLOWN_2, INPUT);
+    pinMode(CLOWN_3, INPUT);
+    pinMode(CLOWN_4, INPUT);
+
+    pinMode(TOP_ROW_WIN_PIN, OUTPUT);
+    pinMode(MID_ROW_WIN_PIN, OUTPUT);
+    pinMode(BTM_ROW_WIN_PIN, OUTPUT);
     pinMode(LAUNCHER_MOTOR_PIN, OUTPUT);
     pinMode(BLOWER_MOTOR_PIN, OUTPUT);
     pinMode(BELT_MOTOR_PIN, OUTPUT);
