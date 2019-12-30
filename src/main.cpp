@@ -17,31 +17,44 @@
 // #define DEBUG    // TODO: add ifdef for debug to show targets positions in the serial monitor
 
 //NOTICE: Relay's state in HIGH when pin is LOW
-#define YAW_BTN_PIN (4)            // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
-#define PITCH_BTN_PIN (2)          // Front pin in the RPi (GPIO17) (UP & DOWN)
-#define CRAZY_CLOWN_START_PIN (3)  // the Crazy Clown machine needs to get a btn press after we enter coin and before the game starts
-#define LAUNCHER_MOTOR_PIN (11)    // shooting motor
-#define BLOWER_MOTOR_PIN (10)      // loads balls into the magazine
-#define BELT_MOTOR_PIN (9)         // loads balls into the launcher
 #define YAW_SERVO_PIN (5)
 #define PITCH_SERVO_PIN (6)
-#define WINNING_SENSOR_PIN (8)   // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (7)       // coin switch pin in the RPi (GPIO25)
-#define LIMIT_SWITCH_2_PIN (12)  // limit switch r/l pin in the RPi (GPIO20)
-#define LIMIT_SWITCH_1_PIN (13)  // limit switch f/b pin in the RPi (GPIO16)
-#define TOP_ROW_WIN_PIN (A0)
-#define MID_ROW_WIN_PIN (A1)
-#define BTM_ROW_WIN_PIN (A2)
+#define LIMIT_SWITCH_2_PIN (16)     // limit switch r/l pin in the RPi (GPIO20)
+#define LIMIT_SWITCH_1_PIN (17)     // limit switch f/b pin in the RPi (GPIO16)
+#define CRAZY_CLOWN_START_PIN (18)  // the Crazy Clown machine needs to get a btn press after we enter coin and before the game starts
+#define LAUNCHER_MOTOR_PIN (20)     // shooting motor
+#define BLOWER_MOTOR_PIN (19)       // loads balls into the magazine
+#define BELT_MOTOR_PIN (15)         // loads balls into the launcher
+#define WINNING_SENSOR_PIN (22)     // winning switch pin in the RPi (GPIO12)
+#define TOP_ROW_WIN_PIN (23)
+#define MID_ROW_WIN_PIN (24)
+#define BTM_ROW_WIN_PIN (25)
+#define START_GAME_PIN (31)  // coin switch pin in the RPi (GPIO25)
+#define YAW_BTN_PIN (32)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define PITCH_BTN_PIN (33)   // Front pin in the RPi (GPIO17) (UP & DOWN)
+#define TOP_ROW_FEEDBACK_PIN (30)
+#define MID_ROW_FEEDBACK_PIN (29)
+#define BTM_ROW_FEEDBACK_PIN (28)
 
 //clowns - count from left to right and top to bottom
 #define CLOWN_1 (47)
 #define CLOWN_2 (46)
 #define CLOWN_3 (45)
 #define CLOWN_4 (44)
+#define CLOWN_5 (43)
+#define CLOWN_6 (42)
+#define CLOWN_7 (41)
+#define CLOWN_8 (40)
+#define CLOWN_9 (39)
+#define CLOWN_10 (38)
+#define CLOWN_11 (37)
+#define CLOWN_12 (36)
+#define CLOWN_13 (35)
+#define CLOWN_14 (34)
 
 #define YAW_UPDATE_MS (40)
 #define PITCH_UPDATE_MS (20)
-#define RESET_GAME_MS (1500)  // TODO: change this interval
+#define RESET_GAME_MS (3000)  // TODO: change this interval
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
 #define PITCH_RESTART_POSITION (180)
@@ -65,7 +78,23 @@ Servo pitch;
 volatile uint8_t yaw_position;
 volatile uint8_t pitch_position;
 
-bool clowns[3][5] = {{CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}};
+uint16_t clowns_mask = 0b00000000000000;
+
+uint16_t get_clowns_state() {
+    for (uint8_t i = 34; i < 48; i++) {
+        //TODO: put the result in a bitmask and send this mask to is_winning_sequence()
+        bitWrite(clowns_mask, i, digitalRead(i));
+    }
+    return clowns_mask;
+}
+
+bool is_winning_sequence(uint16_t mask) {
+    /* did the given mask win the game? */
+    if ((mask & 0b11110000000000) == 0b11110000000000) return true;
+    if ((mask & 0b00001111100000) == 0b00001111100000) return true;
+    if ((mask & 0b00000000011111) == 0b00000000011111) return true;
+    return false;
+}
 
 void limit_switches(bool state) {  //controls home sensors
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -73,16 +102,19 @@ void limit_switches(bool state) {  //controls home sensors
 }
 
 void winning_check() {
-    // (top_row.pressed() || mid_row.pressed() || btm_row.pressed()) ? digitalWrite(WINNING_SENSOR_PIN, HIGH) : digitalWrite(WINNING_SENSOR_PIN, LOW);
-    if (CLOWN_1 && CLOWN_2 && CLOWN_3 && CLOWN_4) {
-        digitalWrite(TOP_ROW_WIN_PIN, HIGH);  //NOTICE: It will need a toggle and also to toggle CRAZY_CLOWN_START_PIN
+    // if (is_winning_sequence && digitalRead(TOP_ROW_FEEDBACK_PIN)) {  //NOTICE: need to make the feedback happen!
+    if (is_winning_sequence(get_clowns_state())) {
+        digitalWrite(TOP_ROW_WIN_PIN, LOW);
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
+    } else {
+        digitalWrite(TOP_ROW_WIN_PIN, HIGH);
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
     }
 }
 
-void toggle_pin(uint8_t pin_num) {
-    digitalWrite(pin_num, HIGH);  // toggling this pin to start a game...
-    digitalWrite(pin_num, LOW);
+void toggle_pin(uint8_t pin) {
+    digitalWrite(pin, HIGH);  // toggling this pin to start a game...
+    digitalWrite(pin, LOW);
 }
 
 void game_start() {                     // resets all parameters
@@ -149,6 +181,9 @@ void setup() {
     delay_timer.setTimeout(DELAY_MS);
 
     //TODO: Add for loop to define inputs and outputs
+    pinMode(TOP_ROW_FEEDBACK_PIN, INPUT);
+    pinMode(MID_ROW_FEEDBACK_PIN, INPUT);
+    pinMode(BTM_ROW_FEEDBACK_PIN, INPUT);
     pinMode(YAW_BTN_PIN, INPUT);
     pinMode(PITCH_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
@@ -164,15 +199,11 @@ void setup() {
     pinMode(BLOWER_MOTOR_PIN, OUTPUT);
     pinMode(BELT_MOTOR_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
-
-    digitalWrite(WINNING_SENSOR_PIN, LOW);
-    digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
-    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
-    digitalWrite(BELT_MOTOR_PIN, HIGH);
-
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
-    limit_switches(0);
+
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
+    reset_cb();
 
     Serial.println(F(
         "________________________________\n"
