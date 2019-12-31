@@ -16,7 +16,12 @@
 
 // #define DEBUG
 
-//NOTICE: Relay's state in HIGH when pin is LOW
+/*
+//NOTICE: Relays work on LOW! (their state in HIGH when pin is LOW and vice versa)
+These are the pins that get affected:
+TOP_ROW_MOTOR_PIN, MID_ROW_MOTOR_PIN, BTM_ROW_MOTOR_PIN,
+LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
+*/
 
 // OUTPUTS
 #define YAW_SERVO_PIN (5)
