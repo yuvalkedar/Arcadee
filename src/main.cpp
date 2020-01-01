@@ -97,7 +97,7 @@ void limit_switches(bool state) {  //controls home sensors
 
 uint16_t get_clowns_state() {
     for (uint8_t i = 34; i < 48; i++) {
-        bitWrite(clowns_mask, i, digitalRead(i));
+        bitWrite(clowns_mask, i - 34, digitalRead(i));
     }
     return clowns_mask;
 }
