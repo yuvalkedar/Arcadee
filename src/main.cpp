@@ -14,7 +14,7 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
-// #define DEBUG
+#define DEBUG
 
 /*
 //NOTICE: Relays work on LOW! (their state in HIGH when pin is LOW and vice versa)
@@ -44,20 +44,20 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define BTM_ROW_SENSOR_PIN (28)
 
 //clowns - count from left to right and top to bottom
-#define CLOWN_1 (47)
-#define CLOWN_2 (46)
-#define CLOWN_3 (45)
-#define CLOWN_4 (44)
-#define CLOWN_5 (43)
-#define CLOWN_6 (42)
-#define CLOWN_7 (41)
-#define CLOWN_8 (40)
-#define CLOWN_9 (39)
-#define CLOWN_10 (38)
-#define CLOWN_11 (37)
-#define CLOWN_12 (36)
-#define CLOWN_13 (35)
-#define CLOWN_14 (34)
+#define CLOWN_1 (49)
+#define CLOWN_2 (48)
+#define CLOWN_3 (47)
+#define CLOWN_4 (46)
+#define CLOWN_5 (45)
+#define CLOWN_6 (44)
+#define CLOWN_7 (43)
+#define CLOWN_8 (42)
+#define CLOWN_9 (41)
+#define CLOWN_10 (40)
+#define CLOWN_11 (39)
+#define CLOWN_12 (38)
+#define CLOWN_13 (37)
+#define CLOWN_14 (36)
 
 #define YAW_UPDATE_MS (40)
 #define PITCH_UPDATE_MS (20)
@@ -88,16 +88,29 @@ Servo pitch;
 volatile uint8_t yaw_position;
 volatile uint8_t pitch_position;
 
-uint16_t clowns_mask = 0b00000000000000;
+// uint16_t clowns_mask = 0x0000;
+uint8_t clowns_pins[] = {CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, CLOWN_5, CLOWN_6, CLOWN_7, CLOWN_8, CLOWN_9, CLOWN_10, CLOWN_11, CLOWN_12, CLOWN_13, CLOWN_14};
 
 void limit_switches(bool state) {  //controls home sensors
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
 }
 
+// uint16_t get_clowns_state() {
+//     uint16_t clowns_mask = 0;
+//     for (uint16_t i = 0; i < 14; i++) {
+//         clowns_mask |= (digitalRead(clowns_pins[i]) << i);
+//         // bitWrite(clowns_mask, i + 1, digitalRead(clowns_pins[i]));
+//     }
+
+//     return clowns_mask;
+// }
+
 uint16_t get_clowns_state() {
-    for (uint8_t i = 34; i < 48; i++) {
-        bitWrite(clowns_mask, i - 34, digitalRead(i));
+    uint16_t clowns_mask = 0;
+    for (int i = 13; i >= 0; --i) {
+        clowns_mask <<= 1;
+        clowns_mask |= (digitalRead(clowns_pins[i]) == HIGH);
     }
     return clowns_mask;
 }
@@ -113,14 +126,11 @@ void winning_check(uint16_t mask) {
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
     } else {
-        digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);  // =turn on
-        digitalWrite(MID_ROW_MOTOR_PIN, HIGH);  // =turn on
-        digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);  // =turn on
+        digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
+        digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
+        digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
         digitalWrite(WINNING_SENSOR_PIN, LOW);
     }
-#ifdef DEBUG
-    Serial.println(mask, BIN);
-#endif
 }
 
 void game_start() {  // resets all parameters
@@ -192,10 +202,11 @@ void setup() {
     pinMode(YAW_BTN_PIN, INPUT);
     pinMode(PITCH_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
-    pinMode(CLOWN_1, INPUT);
-    pinMode(CLOWN_2, INPUT);
-    pinMode(CLOWN_3, INPUT);
-    pinMode(CLOWN_4, INPUT);
+
+    // DDRL |= B00000000;  //sets pins 49-42 as inputs
+    for (uint8_t i = 0; i < 14; i++) {
+        pinMode(clowns_pins[i], INPUT_PULLUP);
+    }
 
     pinMode(TOP_ROW_MOTOR_PIN, OUTPUT);
     pinMode(MID_ROW_MOTOR_PIN, OUTPUT);
@@ -221,6 +232,17 @@ void setup() {
 }
 
 void loop() {
+#ifdef DEBUG
+    // Serial.println(mask, BIN);
+    // delay(500);
+
+    uint16_t state = get_clowns_state();
+    for (uint16_t mask = (uint16_t)1 << 15; mask; mask >>= 1) {
+        Serial.print((state & mask) ? '1' : '0');
+    }
+    Serial.println("\n");
+    delay(500);
+#else
     if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
 
     if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
@@ -241,4 +263,5 @@ void loop() {
 
     winning_check(get_clowns_state());
     TimerManager::instance().update();
+#endif
 }
