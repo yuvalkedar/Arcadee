@@ -46,10 +46,10 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 //clowns - count from left to right and top to bottom
 #define CLOWN_1 (49)
 #define CLOWN_2 (48)
-#define CLOWN_3 (47)
-#define CLOWN_4 (46)
-#define CLOWN_5 (45)
-#define CLOWN_6 (44)
+#define CLOWN_3 (53)
+#define CLOWN_4 (52)
+#define CLOWN_5 (51)
+#define CLOWN_6 (50)
 #define CLOWN_7 (43)
 #define CLOWN_8 (42)
 #define CLOWN_9 (41)
@@ -96,33 +96,32 @@ void limit_switches(bool state) {  //controls home sensors
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
 }
 
-// uint16_t get_clowns_state() {
-//     uint16_t clowns_mask = 0;
-//     for (uint16_t i = 0; i < 14; i++) {
-//         clowns_mask |= (digitalRead(clowns_pins[i]) << i);
-//         // bitWrite(clowns_mask, i + 1, digitalRead(clowns_pins[i]));
-//     }
-
-//     return clowns_mask;
-// }
-
 uint16_t get_clowns_state() {
     uint16_t clowns_mask = 0;
-    for (int i = 13; i >= 0; --i) {
-        clowns_mask <<= 1;
-        clowns_mask |= (digitalRead(clowns_pins[i]) == HIGH);
+    for (uint16_t i = 0; i < 14; i++) {
+        clowns_mask |= (uint16_t)(digitalRead(clowns_pins[i]) << i);
     }
+
     return clowns_mask;
 }
 
+// uint16_t get_clowns_state() {
+//     uint16_t clowns_mask = 0;
+//     for (int i = 13; i >= 0; --i) {
+//         clowns_mask <<= 1;
+//         clowns_mask |= (digitalRead(clowns_pins[i]) == HIGH);
+//     }
+//     return clowns_mask;
+// }
+
 void winning_check(uint16_t mask) {
-    if ((mask & 0b11110000000000) == 0b11110000000000) {  // top row winning sequence
+    if ((mask & 0b11111000000000) == 0b11111000000000) {  // top row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(TOP_ROW_MOTOR_PIN, LOW);                    // =turn on
-    } else if ((mask & 0b00001111100000) == 0b00001111100000) {  // mid row winning sequence
+    } else if ((mask & 0b00000111110000) == 0b00000111110000) {  // mid row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(MID_ROW_MOTOR_PIN, LOW);                    // =turn on
-    } else if ((mask & 0b00000000011111) == 0b00000000011111) {  // btm row winning sequence
+    } else if ((mask & 0b00000000001111) == 0b00000000001111) {  // btm row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
     } else {
