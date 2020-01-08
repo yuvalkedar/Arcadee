@@ -14,7 +14,7 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
-#define DEBUG
+// #define DEBUG
 
 /*
 //NOTICE: Relays work on LOW! (their state in HIGH when pin is LOW and vice versa)
@@ -59,7 +59,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_13 (37)
 #define CLOWN_14 (36)
 
-#define YAW_UPDATE_MS (40)
+#define YAW_UPDATE_MS (140)
 #define PITCH_UPDATE_MS (20)
 #define RESET_GAME_MS (3000)
 #define PITCH_MIN (0)
@@ -115,20 +115,26 @@ uint16_t get_clowns_state() {
 // }
 
 void winning_check(uint16_t mask) {
-    if ((mask & 0b11111000000000) == 0b11111000000000) {  // top row winning sequence
-        digitalWrite(WINNING_SENSOR_PIN, HIGH);
-        digitalWrite(TOP_ROW_MOTOR_PIN, LOW);                    // =turn on
-    } else if ((mask & 0b00000111110000) == 0b00000111110000) {  // mid row winning sequence
-        digitalWrite(WINNING_SENSOR_PIN, HIGH);
-        digitalWrite(MID_ROW_MOTOR_PIN, LOW);                    // =turn on
-    } else if ((mask & 0b00000000001111) == 0b00000000001111) {  // btm row winning sequence
+    if ((mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
     } else {
-        digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
-        digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
-        digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
         digitalWrite(WINNING_SENSOR_PIN, LOW);
+        if (!digitalRead(BTM_ROW_SENSOR_PIN)) digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
+    }
+    if ((mask & 0b00000111110000) == 0b00000111110000) {  // mid row winning sequence
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        digitalWrite(MID_ROW_MOTOR_PIN, LOW);  // =turn on
+    } else {
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
+        if (!digitalRead(MID_ROW_SENSOR_PIN)) digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
+    }
+    if ((mask & 0b00000000001111) == 0b00000000001111) {  // top row winning sequence
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        digitalWrite(TOP_ROW_MOTOR_PIN, LOW);  // =turn on
+    } else {
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
+        if (!digitalRead(TOP_ROW_SENSOR_PIN)) digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
     }
 }
 
