@@ -22,13 +22,17 @@
 #define SERVO_PIN (6)
 
 #define STEPS_PER_LEVEL (280)
+#define SERVO_UPDATE_MS (150)
 #define SERVO_MIN_POSITION (0)
 #define SERVO_MAX_POSITION (180)
 
 Servo wheel_servo;
+Timer servo_update_timer;
 
 char input_char;
-uint8_t servo_position = 0;
+
+volatile uint8_t servo_position = SERVO_MAX_POSITION;
+int increment_steps = 1;
 
 //TODO: add function that gets input of dir and num of steps
 
@@ -43,9 +47,10 @@ void reset_rocket_position() {  //go a few steps up (just to make sure) and then
 }
 
 void servo_sweep() {
-    if (servo_position <= SERVO_MIN_POSITION + 1) servo_position++;
-    if (servo_position >= SERVO_MAX_POSITION) servo_position--;
+    servo_position -= increment_steps;
     wheel_servo.write(servo_position);
+    if (servo_position <= SERVO_MIN_POSITION || servo_position - 1 >= SERVO_MAX_POSITION) increment_steps = -increment_steps;
+    Serial.println(servo_position);
 }
 
 void setup() {
@@ -54,12 +59,16 @@ void setup() {
     wheel_servo.attach(SERVO_PIN);
     wheel_servo.write(SERVO_MIN_POSITION);
 
+    servo_update_timer.setCallback(servo_sweep);
+    servo_update_timer.setInterval(SERVO_UPDATE_MS);
+
     // Declare pins as output:
     pinMode(STEPS_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
 
     reset_rocket_position();
+    // servo_update_timer.start();
 
     Serial.println(F(
         "____________________________________\n"
@@ -72,8 +81,6 @@ void setup() {
 }
 
 void loop() {
-    servo_sweep();
-
     input_char = Serial.read();
     switch (input_char) {
         case 'u':
