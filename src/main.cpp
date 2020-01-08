@@ -16,18 +16,25 @@
 
 // #define DEBUG
 
-#define LIMIT_SWITCH (5)  // rocket's home position
 #define STEPS_PIN (3)
 #define DIR_PIN (4)
+#define LIMIT_SWITCH_PIN (5)  // rocket's home position
+#define SERVO_PIN (6)
+
 #define STEPS_PER_LEVEL (280)
+#define SERVO_MIN_POSITION (0)
+#define SERVO_MAX_POSITION (180)
+
+Servo wheel_servo;
 
 char input_char;
+uint8_t servo_position = 0;
 
 //TODO: add function that gets input of dir and num of steps
 
 void reset_rocket_position() {  //go a few steps up (just to make sure) and then go down until the limit switch is pressed
     digitalWrite(DIR_PIN, LOW);
-    while (digitalRead(LIMIT_SWITCH)) {
+    while (digitalRead(LIMIT_SWITCH_PIN)) {
         digitalWrite(STEPS_PIN, HIGH);
         delayMicroseconds(1000);
         digitalWrite(STEPS_PIN, LOW);
@@ -35,13 +42,22 @@ void reset_rocket_position() {  //go a few steps up (just to make sure) and then
     }
 }
 
+void servo_sweep() {
+    if (servo_position <= SERVO_MIN_POSITION + 1) servo_position++;
+    if (servo_position >= SERVO_MAX_POSITION) servo_position--;
+    wheel_servo.write(servo_position);
+}
+
 void setup() {
     Serial.begin(115200);
+
+    wheel_servo.attach(SERVO_PIN);
+    wheel_servo.write(SERVO_MIN_POSITION);
 
     // Declare pins as output:
     pinMode(STEPS_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
-    pinMode(LIMIT_SWITCH, INPUT_PULLUP);
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
 
     reset_rocket_position();
 
@@ -56,7 +72,8 @@ void setup() {
 }
 
 void loop() {
-    // Serial.println(digitalRead(LIMIT_SWITCH));
+    servo_sweep();
+
     input_char = Serial.read();
     switch (input_char) {
         case 'u':
