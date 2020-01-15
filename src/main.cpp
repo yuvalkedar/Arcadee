@@ -13,7 +13,7 @@
 #include <Servo.h>
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
-#include "BasicStepperDriver.h"
+#include "BasicStepperDriver.h" // https://github.com/laurb9/StepperDriver
 
 // #define DEBUG
 
@@ -30,7 +30,7 @@
 #define LDR_3_PIN (A2)
 #define LDR_4_PIN (A3)
 
-#define STEPS_PER_LEVEL (280)
+#define DEG_PER_LEVEL (650)
 #define SERVO_UPDATE_MS (100)
 #define SERVO_MIN_POSITION (0)
 #define SERVO_MAX_POSITION (180)
@@ -67,25 +67,14 @@ void delay_millis(uint32_t ms) {
         ;
 }
 
-void move_rocket(uint8_t dir, uint16_t steps) {
-    // (dir == 1) ? digitalWrite(DIR_PIN, HIGH) : digitalWrite(DIR_PIN, LOW);  // if dir == 1 dir is up else dir is down
-
-    // for (int i = 0; i < steps; i++) {
-    //     // These four lines result in 1 step:
-    //     digitalWrite(STEPS_PIN, HIGH);
-    //     delayMicroseconds(2000);
-    //     digitalWrite(STEPS_PIN, LOW);
-    //     delayMicroseconds(2000);
-    // }
-}
-
 void reset_rocket_position() {  //go a few steps up (just to make sure) and then go down until the limit switch is pressed
-    digitalWrite(DIR_PIN, LOW);
+    // rocket.rotate(DEG_PER_LEVEL);
+    // rocket.startMove(100 * MOTOR_STEPS * MICROSTEPS);     // in microsteps
+    // rocket.startRotate(100 * 360);
     while (digitalRead(LIMIT_SWITCH_PIN)) {
-        digitalWrite(STEPS_PIN, HIGH);
-        delayMicroseconds(1000);
-        digitalWrite(STEPS_PIN, LOW);
-        delayMicroseconds(1000);
+        rocket.rotate(-DEG_PER_LEVEL);
+        // rocket.stop();   // limit state 0 = pressed and 1 = unpressed
+        // Serial.println("stopped");
     }
 }
 
@@ -128,38 +117,39 @@ void update_score() {
     ldr_2_prev_read = ldr_2_current_read;
     ldr_4_prev_read = ldr_4_current_read;
 
-    // Serial.println();
-    // Serial.print(ldr_1_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_2_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_3_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_4_current_read);
-    // Serial.print(" ");
-    // Serial.println(score);
+    Serial.println();
+    Serial.print(ldr_1_current_read);
+    Serial.print(" ");
+    Serial.print(ldr_2_current_read);
+    Serial.print(" ");
+    Serial.print(ldr_3_current_read);
+    Serial.print(" ");
+    Serial.print(ldr_4_current_read);
+    Serial.print(" ");
+    Serial.println(score);
 
+//TODO: Fix levels 3 to 4
     switch (score) {
         case 0:
-            if (last_score == 1) move_rocket(0, STEPS_PER_LEVEL);
+            if (last_score == 1) rocket.rotate(-DEG_PER_LEVEL);
             last_score = 0;
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
         case 1:
-            if (last_score == 0) move_rocket(1, STEPS_PER_LEVEL);  // level up
-            if (last_score == 2) move_rocket(0, STEPS_PER_LEVEL);  // level down
+            if (last_score == 0) rocket.rotate(DEG_PER_LEVEL);  // level up
+            if (last_score == 2) rocket.rotate(-DEG_PER_LEVEL);  // level down
             last_score = 1;
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
         case 2:
-            if (last_score == 1) move_rocket(1, STEPS_PER_LEVEL);  // level up
-            if (last_score == 3) move_rocket(0, STEPS_PER_LEVEL);  // level down
+            if (last_score == 1) rocket.rotate(DEG_PER_LEVEL);  // level up
+            if (last_score == 3) rocket.rotate(-DEG_PER_LEVEL);  // level down
             last_score = 2;
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
         case 3:
-            if (last_score == 2) move_rocket(1, STEPS_PER_LEVEL);  // level up
-            if (last_score == 4) move_rocket(0, STEPS_PER_LEVEL);  // level down
+            if (last_score == 2) rocket.rotate(DEG_PER_LEVEL);  // level up
+            if (last_score == 4) rocket.rotate(-DEG_PER_LEVEL);  // level down
             last_score = 3;
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
@@ -223,7 +213,7 @@ void setup() {
     pinMode(LIMIT_SWITCH_1_PIN, INPUT);  // When pressed = 0
     pinMode(LIMIT_SWITCH_2_PIN, INPUT);  // When depressed = 1
 
-    // reset_rocket_position();
+    reset_rocket_position();
     // servo_update_timer.start();
 }
 
@@ -232,42 +222,22 @@ void loop() {
     input_char = Serial.read();
     switch (input_char) {
         case 'u':
-            digitalWrite(DIR_PIN, HIGH);
-
-            // Spin the stepper motor 1 revolution slowly:
-            for (int i = 0; i < STEPS_PER_LEVEL; i++) {
-                // These four lines result in 1 step:
-                digitalWrite(STEPS_PIN, HIGH);
-                delayMicroseconds(2000);
-                digitalWrite(STEPS_PIN, LOW);
-                delayMicroseconds(2000);
-            }
-
+            rocket.rotate(DEG_PER_LEVEL);  // level up
             break;
         case 'd':
-            // Set the spinning direction counterclockwise:
-            digitalWrite(DIR_PIN, LOW);
-
-            // Spin the stepper motor 1 revolution quickly:
-            for (int i = 0; i < STEPS_PER_LEVEL; i++) {
-                // These four lines result in 1 step:
-                digitalWrite(STEPS_PIN, HIGH);
-                delayMicroseconds(1000);
-                digitalWrite(STEPS_PIN, LOW);
-                delayMicroseconds(1000);
-            }
+            rocket.rotate(-DEG_PER_LEVEL);  // level down
             break;
     }
-    update_score();
+    // update_score();
 
 #else
     // servo_sweep();
     // check_for_game();
-    // update_score();
-    // move_rocket(0, STEPS_PER_LEVEL);
+    update_score();
     // TimerManager::instance().update();
 
-    rocket.rotate(30);
+    
+
 
     // Serial.println();
     // Serial.print(ldr_1_current_read);
