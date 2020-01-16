@@ -33,8 +33,8 @@
 #define LDR_3_PIN (A2)
 #define LDR_4_PIN (A3)
 
-#define NUM_LEDS (75)   //TODO: check the real number
-#define LED_BRIGHTNESS (200)
+#define NUM_LEDS (87)
+#define LED_BRIGHTNESS (50)
 #define WINNING_FX_TIME (2000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
 #define DEG_PER_LEVEL (360)
 #define SERVO_UPDATE_MS (100)
@@ -55,6 +55,7 @@ Servo wheel_servo;
 Timer servo_update_timer;
 Timer reset_timer;
 
+bool status = 0;
 char input_char;
 int8_t score = 0;
 uint8_t last_score = 0;
@@ -76,31 +77,39 @@ void delay_millis(uint32_t ms) {
 }
 
 void reset_rocket_position() {  //go a few steps up (just to make sure) and then go down until the limit switch is pressed
-    while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {// 0 = pressed, 1 = unpressed
+    while (digitalRead(BTM_LIMIT_SWITCH_PIN)) { // 0 = pressed, 1 = unpressed
         rocket.rotate(-DEG_PER_LEVEL);
     }
 }
 
-void winning() {  // Rainbow cycle along whole strip.
+void colorWipe(uint32_t c, uint8_t wait) {
+  for (uint16_t i=0; i<strip.numPixels(); i++) {
+    strip.setPixelColor(i, c);
+    strip.show();
+    delay_millis(wait);
+  }
+}
+
+void winning() {    // winning effect
     while (digitalRead(TOP_LIMIT_SWITCH_PIN)) {
         rocket.rotate(DEG_PER_LEVEL);
     }
 
-    for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256) {
-        for (uint8_t i = 0; i < strip.numPixels(); i++) {  // For each pixel in strip...
-            int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
-            strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
-        }
-        strip.show();
-    }
+  colorWipe(strip.Color(255, 0, 0), 10); // Red
+  strip.clear();
+  strip.show();
 }
 
+//FIXME: reset_game isn't called
 void reset_game() {
+    Serial.println("RESTART GAME");
     score = 0;
-    digitalWrite(WINNING_SENSOR_PIN, LOW);
+    status = 0;
     strip.clear();
     strip.show();
-    last_score = 4;     //NOTICE: I might have to change this to 0 
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
+    reset_rocket_position();
+    last_score = 4;
 }
 
 void servo_sweep() {
@@ -151,8 +160,11 @@ void update_score() {
     // Serial.print(" ");
     // Serial.print(ldr_4_current_read);
     // Serial.print(" ");
-    // Serial.println(score);
+    // Serial.print(score);
+    // Serial.print(" ");
+    // Serial.println(last_score);
 
+    //TODO: add colorWipe() by score level
     switch (score) {
         case 0:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
@@ -174,13 +186,19 @@ void update_score() {
         case 3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (last_score == 2) rocket.rotate(DEG_PER_LEVEL);  // level up
-            // if (last_score == 4) rocket.rotate(-DEG_PER_LEVEL);  // level down
+            if (last_score == 4) rocket.rotate(-DEG_PER_LEVEL);  // level down
             last_score = 3;
             break;
         case 4:
-            winning_check();
-            reset_timer.start();
-            winning();
+        //TODO: need to make sure is will call the timer.start only once!
+            // winning_check();
+            if (!status) {
+                winning();
+                reset_timer.start();
+                Serial.println("TEST");
+                status++;
+            }
+            last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
             break;
     }
 }
@@ -242,11 +260,12 @@ void setup() {
     reset_timer.setTimeout(WINNING_FX_TIME);
 
     strip.begin();
-    strip.show();  // Turn OFF all pixels
     strip.setBrightness(LED_BRIGHTNESS);
+    strip.show();  // Turn OFF all pixels
 
-    reset_rocket_position();
+    // reset_rocket_position();
     // servo_update_timer.start();
+    reset_timer.start();
 }
 
 void loop() {
@@ -266,7 +285,7 @@ void loop() {
     // servo_sweep();
     // check_for_game();
     update_score();
-    // TimerManager::instance().update();
+    TimerManager::instance().update();
 
 #endif
 }
