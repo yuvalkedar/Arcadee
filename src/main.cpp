@@ -56,7 +56,6 @@ Timer servo_update_timer;
 Timer reset_timer;
 
 bool status = 0;
-char input_char;
 int8_t score = 0;
 uint8_t last_score = 0;
 uint8_t servo_position = SERVO_MAX_POSITION;
@@ -153,20 +152,20 @@ void update_score() {
     }
     ldr_2_prev_read = ldr_2_current_read;
     ldr_4_prev_read = ldr_4_current_read;
-
-    // Serial.println();
-    // Serial.print(ldr_1_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_2_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_3_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_4_current_read);
-    // Serial.print(" ");
-    // Serial.print(score);
-    // Serial.print(" ");
-    // Serial.println(last_score);
-
+#ifdef DEBUG
+    Serial.println();
+    Serial.print(ldr_1_current_read);
+    Serial.print(" ");
+    Serial.print(ldr_2_current_read);
+    Serial.print(" ");
+    Serial.print(ldr_3_current_read);
+    Serial.print(" ");
+    Serial.print(ldr_4_current_read);
+    Serial.print(" ");
+    Serial.print(score);
+    Serial.print(" ");
+    Serial.println(last_score);
+#endif
     //TODO: add colorWipe() by score level
     switch (score) {
         case 0:
@@ -177,19 +176,19 @@ void update_score() {
         case 1:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (last_score == 0) rocket.rotate(DEG_PER_LEVEL);  // level up
-            if (last_score == 2) rocket.rotate(-DEG_PER_LEVEL);  // level down
+            if (last_score == 2) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
             last_score = 1;
             break;
         case 2:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 1) rocket.rotate(DEG_PER_LEVEL);  // level up
-            if (last_score == 3) rocket.rotate(-DEG_PER_LEVEL);  // level down
+            if (last_score == 1) rocket.rotate(1.5 * DEG_PER_LEVEL);  // level up
+            if (last_score == 3) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
             last_score = 2;
             break;
         case 3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 2) rocket.rotate(DEG_PER_LEVEL);  // level up
-            if (last_score == 4) rocket.rotate(-DEG_PER_LEVEL);  // level down
+            if (last_score == 2) rocket.rotate(1.5 * DEG_PER_LEVEL);  // level up
+            // if (last_score == 4) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
             last_score = 3;
             break;
         case 4:
@@ -197,7 +196,6 @@ void update_score() {
             if (!status) {  //status var is to make sure what inside will be called only once.
                 winning();
                 reset_timer.start();
-                Serial.println("TEST");
                 status++;
             }
             last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
@@ -271,23 +269,8 @@ void setup() {
 }
 
 void loop() {
-#ifdef DEBUG
-    input_char = Serial.read();
-    switch (input_char) {
-        case 'u':
-            rocket.rotate(DEG_PER_LEVEL);  // level up
-            break;
-        case 'd':
-            rocket.rotate(-DEG_PER_LEVEL);  // level down
-            break;
-    }
-    // update_score();
-
-#else
     // servo_sweep();
     // check_for_game();
     update_score();
     TimerManager::instance().update();
-
-#endif
 }
