@@ -9,6 +9,7 @@
 	Arduino Uno communicates with RPi.
 */
 
+#include <Adafruit_NeoPixel.h>
 #include <Button.h>  // https://github.com/madleech/Button
 #include <Servo.h>
 #include <timer.h>  // https://github.com/brunocalou/Timer
@@ -19,18 +20,23 @@
 
 #define STEPS_PIN (3)
 #define DIR_PIN (4)
-#define LIMIT_SWITCH_PIN (5)  // rocket's home position
+#define BTM_LIMIT_SWITCH_PIN (5)  // rocket's home position
+#define TOP_LIMIT_SWITCH_PIN (8)  // rocket's home position
 #define SERVO_PIN (6)
+#define LED_DATA_PIN (9)
 #define WINNING_SENSOR_PIN (7)   // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (8)       // coin switch pin in the RPi (GPIO25)
-#define LIMIT_SWITCH_2_PIN (9)   // limit switch r/l pin in the RPi (GPIO20)
+#define START_GAME_PIN (11)       // coin switch pin in the RPi (GPIO25)
+#define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (10)  // limit switch f/b pin in the RPi (GPIO16)
 #define LDR_1_PIN (A0)
 #define LDR_2_PIN (A1)
 #define LDR_3_PIN (A2)
 #define LDR_4_PIN (A3)
 
-#define DEG_PER_LEVEL (650)
+#define NUM_LEDS (75)   //TODO: check the real number
+#define LED_BRIGHTNESS (200)
+#define WINNING_FX_TIME (2000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
+#define DEG_PER_LEVEL (360)
 #define SERVO_UPDATE_MS (100)
 #define SERVO_MIN_POSITION (0)
 #define SERVO_MAX_POSITION (180)
@@ -42,10 +48,12 @@
 #define RPM (120)
 #define MICROSTEPS (1)
 
+Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
 Button coin_btn(START_GAME_PIN);
 BasicStepperDriver rocket(MOTOR_STEPS, DIR_PIN, STEPS_PIN);
 Servo wheel_servo;
 Timer servo_update_timer;
+Timer reset_timer;
 
 char input_char;
 int8_t score = 0;
@@ -68,14 +76,31 @@ void delay_millis(uint32_t ms) {
 }
 
 void reset_rocket_position() {  //go a few steps up (just to make sure) and then go down until the limit switch is pressed
-    // rocket.rotate(DEG_PER_LEVEL);
-    // rocket.startMove(100 * MOTOR_STEPS * MICROSTEPS);     // in microsteps
-    // rocket.startRotate(100 * 360);
-    while (digitalRead(LIMIT_SWITCH_PIN)) {
+    while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {// 0 = pressed, 1 = unpressed
         rocket.rotate(-DEG_PER_LEVEL);
-        // rocket.stop();   // limit state 0 = pressed and 1 = unpressed
-        // Serial.println("stopped");
     }
+}
+
+void winning() {  // Rainbow cycle along whole strip.
+    while (digitalRead(TOP_LIMIT_SWITCH_PIN)) {
+        rocket.rotate(DEG_PER_LEVEL);
+    }
+
+    for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256) {
+        for (uint8_t i = 0; i < strip.numPixels(); i++) {  // For each pixel in strip...
+            int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
+            strip.setPixelColor(i, strip.gamma32(strip.ColorHSV(pixelHue)));
+        }
+        strip.show();
+    }
+}
+
+void reset_game() {
+    score = 0;
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
+    strip.clear();
+    strip.show();
+    last_score = 4;     //NOTICE: I might have to change this to 0 
 }
 
 void servo_sweep() {
@@ -117,46 +142,45 @@ void update_score() {
     ldr_2_prev_read = ldr_2_current_read;
     ldr_4_prev_read = ldr_4_current_read;
 
-    Serial.println();
-    Serial.print(ldr_1_current_read);
-    Serial.print(" ");
-    Serial.print(ldr_2_current_read);
-    Serial.print(" ");
-    Serial.print(ldr_3_current_read);
-    Serial.print(" ");
-    Serial.print(ldr_4_current_read);
-    Serial.print(" ");
-    Serial.println(score);
+    // Serial.println();
+    // Serial.print(ldr_1_current_read);
+    // Serial.print(" ");
+    // Serial.print(ldr_2_current_read);
+    // Serial.print(" ");
+    // Serial.print(ldr_3_current_read);
+    // Serial.print(" ");
+    // Serial.print(ldr_4_current_read);
+    // Serial.print(" ");
+    // Serial.println(score);
 
-//TODO: Fix levels 3 to 4
     switch (score) {
         case 0:
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (last_score == 1) rocket.rotate(-DEG_PER_LEVEL);
             last_score = 0;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
         case 1:
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (last_score == 0) rocket.rotate(DEG_PER_LEVEL);  // level up
             if (last_score == 2) rocket.rotate(-DEG_PER_LEVEL);  // level down
             last_score = 1;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
         case 2:
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (last_score == 1) rocket.rotate(DEG_PER_LEVEL);  // level up
             if (last_score == 3) rocket.rotate(-DEG_PER_LEVEL);  // level down
             last_score = 2;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
         case 3:
-            if (last_score == 2) rocket.rotate(DEG_PER_LEVEL);  // level up
-            if (last_score == 4) rocket.rotate(-DEG_PER_LEVEL);  // level down
-            last_score = 3;
             digitalWrite(WINNING_SENSOR_PIN, LOW);
+            if (last_score == 2) rocket.rotate(DEG_PER_LEVEL);  // level up
+            // if (last_score == 4) rocket.rotate(-DEG_PER_LEVEL);  // level down
+            last_score = 3;
             break;
         case 4:
             winning_check();
-            // reset_timer.start();
-            // winning();
+            reset_timer.start();
+            winning();
             break;
     }
 }
@@ -205,13 +229,21 @@ void setup() {
     // Declare pins as output:
     pinMode(STEPS_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
-    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    pinMode(BTM_LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    pinMode(TOP_LIMIT_SWITCH_PIN, INPUT_PULLUP);
     pinMode(LDR_1_PIN, INPUT);
     pinMode(LDR_2_PIN, INPUT);
     pinMode(LDR_3_PIN, INPUT);
     pinMode(LDR_4_PIN, INPUT);
     pinMode(LIMIT_SWITCH_1_PIN, INPUT);  // When pressed = 0
     pinMode(LIMIT_SWITCH_2_PIN, INPUT);  // When depressed = 1
+
+    reset_timer.setCallback(reset_game);
+    reset_timer.setTimeout(WINNING_FX_TIME);
+
+    strip.begin();
+    strip.show();  // Turn OFF all pixels
+    strip.setBrightness(LED_BRIGHTNESS);
 
     reset_rocket_position();
     // servo_update_timer.start();
@@ -236,19 +268,5 @@ void loop() {
     update_score();
     // TimerManager::instance().update();
 
-    
-
-
-    // Serial.println();
-    // Serial.print(ldr_1_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_2_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_3_current_read);
-    // Serial.print(" ");
-    // Serial.print(ldr_4_current_read);
-    // Serial.print(" ");
-    // Serial.println(score);
-    // delay(10);
 #endif
 }
