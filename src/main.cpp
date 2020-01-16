@@ -16,7 +16,11 @@
 #include <timerManager.h>
 #include "BasicStepperDriver.h" // https://github.com/laurb9/StepperDriver
 
-// #define DEBUG
+//Thursday Inlights:
+//Found out that when I level up from 3 to 4 nothing happens at the second round although I can see level has up on the serial monitor.
+//Also, the rope is released too much when the rocket goes down.
+// Try to make the two buttons as interrupts
+#define DEBUG
 
 #define STEPS_PIN (3)
 #define DIR_PIN (4)
@@ -53,7 +57,6 @@ Button coin_btn(START_GAME_PIN);
 BasicStepperDriver rocket(MOTOR_STEPS, DIR_PIN, STEPS_PIN);
 Servo wheel_servo;
 Timer servo_update_timer;
-Timer reset_timer;
 
 bool status = 0;
 int8_t score = 0;
@@ -152,6 +155,7 @@ void update_score() {
     }
     ldr_2_prev_read = ldr_2_current_read;
     ldr_4_prev_read = ldr_4_current_read;
+
 #ifdef DEBUG
     Serial.println();
     Serial.print(ldr_1_current_read);
@@ -166,6 +170,7 @@ void update_score() {
     Serial.print(" ");
     Serial.println(last_score);
 #endif
+
     //TODO: add colorWipe() by score level
     switch (score) {
         case 0:
@@ -195,7 +200,7 @@ void update_score() {
             // winning_check();
             if (!status) {  //status var is to make sure what inside will be called only once.
                 winning();
-                reset_timer.start();
+                reset_game();
                 status++;
             }
             last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
@@ -256,21 +261,17 @@ void setup() {
     pinMode(LIMIT_SWITCH_1_PIN, INPUT);  // When pressed = 0
     pinMode(LIMIT_SWITCH_2_PIN, INPUT);  // When depressed = 1
 
-    reset_timer.setCallback(reset_game);
-    reset_timer.setTimeout(WINNING_FX_TIME);
-
     strip.begin();
     strip.setBrightness(LED_BRIGHTNESS);
     strip.show();  // Turn OFF all pixels
 
-    // reset_rocket_position();
     // servo_update_timer.start();
-    reset_timer.start();
+    reset_game();
 }
 
 void loop() {
     // servo_sweep();
     // check_for_game();
+    // Serial.println(digitalRead(BTM_LIMIT_SWITCH_PIN));
     update_score();
-    TimerManager::instance().update();
 }
