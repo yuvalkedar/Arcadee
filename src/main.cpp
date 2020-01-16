@@ -83,11 +83,15 @@ void reset_rocket_position() {  //go a few steps up (just to make sure) and then
 }
 
 void colorWipe(uint32_t c, uint8_t wait) {
-  for (uint16_t i=0; i<strip.numPixels(); i++) {
-    strip.setPixelColor(i, c);
-    strip.show();
-    delay_millis(wait);
-  }
+    for (uint8_t l = 0; l < 5; l++) {
+        for (uint16_t i=0; i<strip.numPixels(); i++) {
+            strip.setPixelColor(i, c);
+            strip.show();
+            delay_millis(wait);
+        }
+        strip.clear();
+        strip.show();
+    }
 }
 
 void winning() {    // winning effect
@@ -100,7 +104,6 @@ void winning() {    // winning effect
   strip.show();
 }
 
-//FIXME: reset_game isn't called
 void reset_game() {
     Serial.println("RESTART GAME");
     score = 0;
@@ -190,9 +193,8 @@ void update_score() {
             last_score = 3;
             break;
         case 4:
-        //TODO: need to make sure is will call the timer.start only once!
             // winning_check();
-            if (!status) {
+            if (!status) {  //status var is to make sure what inside will be called only once.
                 winning();
                 reset_timer.start();
                 Serial.println("TEST");
