@@ -16,10 +16,13 @@
 #include <timerManager.h>
 #include "BasicStepperDriver.h" // https://github.com/laurb9/StepperDriver
 
+//NOTICE: rocket doesn't know it's home position, hence you need to position it manualy when restarting machine.
+
 //Thursday Inlights:
 //Found out that when I level up from 3 to 4 nothing happens at the second round although I can see level has up on the serial monitor.
 //Also, the rope is released too much when the rocket goes down.
 // Try to make the two buttons as interrupts
+
 #define DEBUG
 
 #define STEPS_PIN (3)
@@ -40,7 +43,6 @@
 #define NUM_LEDS (87)
 #define LED_BRIGHTNESS (50)
 #define WINNING_FX_TIME (2000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
-#define DEG_PER_LEVEL (360)
 #define SERVO_UPDATE_MS (100)
 #define SERVO_MIN_POSITION (0)
 #define SERVO_MAX_POSITION (180)
@@ -51,6 +53,11 @@
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
+#define DEG_PER_LEVEL (360)
+#define LEVEL_0_1_DEG (DEG_PER_LEVEL)
+#define LEVEL_1_2_DEG (1.5 * DEG_PER_LEVEL)
+#define LEVEL_2_3_DEG (1.5 * DEG_PER_LEVEL)
+#define LEVEL_3_4_DEG (1.5 * DEG_PER_LEVEL)
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
 Button coin_btn(START_GAME_PIN);
@@ -78,11 +85,12 @@ void delay_millis(uint32_t ms) {
         ;
 }
 
+/*
 void reset_rocket_position() {  //go a few steps up (just to make sure) and then go down until the limit switch is pressed
     while (digitalRead(BTM_LIMIT_SWITCH_PIN)) { // 0 = pressed, 1 = unpressed
         rocket.rotate(-DEG_PER_LEVEL);
     }
-}
+}*/
 
 void colorWipe(uint32_t c, uint8_t wait) {
     for (uint8_t l = 0; l < 5; l++) {
@@ -97,23 +105,22 @@ void colorWipe(uint32_t c, uint8_t wait) {
 }
 
 void winning() {    // winning effect
-    while (digitalRead(TOP_LIMIT_SWITCH_PIN)) {
-        rocket.rotate(DEG_PER_LEVEL);
-    }
+    rocket.rotate(LEVEL_3_4_DEG);
 
-  colorWipe(strip.Color(255, 0, 0), 10); // Red
-  strip.clear();
-  strip.show();
+    colorWipe(strip.Color(255, 0, 0), 10); // Red
+    strip.clear();
+    strip.show();
 }
 
 void reset_game() {
     Serial.println("RESTART GAME");
-    score = 0;
+    if (score != 0) rocket.rotate(-(LEVEL_3_4_DEG + LEVEL_2_3_DEG + LEVEL_1_2_DEG + LEVEL_0_1_DEG));
     status = 0;
+    score = 0;
     strip.clear();
     strip.show();
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    reset_rocket_position();
+    // reset_rocket_position();
     last_score = 4;
 }
 
@@ -175,35 +182,35 @@ void update_score() {
     switch (score) {
         case 0:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 1) rocket.rotate(-DEG_PER_LEVEL);
+            if (last_score == 1) rocket.rotate(-LEVEL_0_1_DEG);
             last_score = 0;
             break;
         case 1:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 0) rocket.rotate(DEG_PER_LEVEL);  // level up
-            if (last_score == 2) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
+            if (last_score == 0) rocket.rotate(LEVEL_0_1_DEG);  // level up
+            if (last_score == 2) rocket.rotate(-LEVEL_1_2_DEG);  // level down
             last_score = 1;
             break;
         case 2:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 1) rocket.rotate(1.5 * DEG_PER_LEVEL);  // level up
-            if (last_score == 3) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
+            if (last_score == 1) rocket.rotate(LEVEL_1_2_DEG);  // level up
+            if (last_score == 3) rocket.rotate(-LEVEL_2_3_DEG);  // level down
             last_score = 2;
             break;
         case 3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 2) rocket.rotate(1.5 * DEG_PER_LEVEL);  // level up
-            // if (last_score == 4) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
+            if (last_score == 2) rocket.rotate(LEVEL_2_3_DEG);  // level up
+            if (last_score == 4) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
             last_score = 3;
             break;
         case 4:
             // winning_check();
             if (!status) {  //status var is to make sure what inside will be called only once.
+                status++;
                 winning();
                 reset_game();
-                status++;
             }
-            last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
+            // last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
             break;
     }
 }
@@ -266,7 +273,7 @@ void setup() {
     strip.show();  // Turn OFF all pixels
 
     // servo_update_timer.start();
-    reset_game();
+    // reset_game();
 }
 
 void loop() {
