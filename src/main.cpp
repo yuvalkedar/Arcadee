@@ -85,12 +85,15 @@ void delay_millis(uint32_t ms) {
         ;
 }
 
-/*
-void reset_rocket_position() {  //go a few steps up (just to make sure) and then go down until the limit switch is pressed
-    while (digitalRead(BTM_LIMIT_SWITCH_PIN)) { // 0 = pressed, 1 = unpressed
-        rocket.rotate(-DEG_PER_LEVEL);
-    }
-}*/
+void reset_rocket_position() {  //go down until the limit switch is pressed
+  while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {
+    digitalWrite(DIR_PIN, LOW);      // (HIGH = anti-clockwise / LOW = clockwise)
+    digitalWrite(STEPS_PIN, HIGH);
+    delay(5);                       // Delay to slow down speed of Stepper
+    digitalWrite(STEPS_PIN, LOW);
+    delay(5);
+  }
+}
 
 void colorWipe(uint32_t c, uint8_t wait) {
     for (uint8_t l = 0; l < 5; l++) {
@@ -120,7 +123,6 @@ void reset_game() {
     strip.clear();
     strip.show();
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    // reset_rocket_position();
     last_score = 4;
 }
 
@@ -274,11 +276,11 @@ void setup() {
 
     // servo_update_timer.start();
     // reset_game();
+    reset_rocket_position();
 }
 
 void loop() {
     // servo_sweep();
     // check_for_game();
-    // Serial.println(digitalRead(BTM_LIMIT_SWITCH_PIN));
     update_score();
 }
