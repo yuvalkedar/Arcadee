@@ -283,6 +283,6 @@ void setup() {
 
 void loop() {
     // check_for_game();
-    // update_score();
+    update_score();
     sweep_motor();
 }
