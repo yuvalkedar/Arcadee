@@ -38,10 +38,10 @@
 #define NUM_LEDS (87)
 #define LED_BRIGHTNESS (50)
 #define WINNING_FX_TIME (2000)  //NOTICE    : make sure the number isn't too big. User might start a new game before the effect ends.
-#define LDR_1_LIMIT (200)
-#define LDR_2_LIMIT (200)
-#define LDR_3_LIMIT (150)
-#define LDR_4_LIMIT (170)
+#define LDR_1_LIMIT (250)
+#define LDR_2_LIMIT (250)
+#define LDR_3_LIMIT (250)
+#define LDR_4_LIMIT (250)
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
@@ -278,11 +278,13 @@ void setup() {
     strip.show();  // Turn OFF all pixels
 
     // reset_game();
-    // reset_rocket_position();
+    reset_rocket_position();
 }
 
 void loop() {
     // check_for_game();
     update_score();
     sweep_motor();
+
+    TimerManager::instance().update();
 }
