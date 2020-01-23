@@ -11,27 +11,21 @@
 
 #include <Adafruit_NeoPixel.h>
 #include <Button.h>  // https://github.com/madleech/Button
-#include <Servo.h>
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 #include "BasicStepperDriver.h" // https://github.com/laurb9/StepperDriver
 
-//NOTICE: rocket doesn't know it's home position, hence you need to position it manualy when restarting machine.
-
-//Thursday Inlights:
-//Found out that when I level up from 3 to 4 nothing happens at the second round although I can see level has up on the serial monitor.
-//Also, the rope is released too much when the rocket goes down.
-// Try to make the two buttons as interrupts
-
 #define DEBUG
 
+#define R_LIMIT_SWITCH_PIN    (8)
+#define L_LIMIT_SWITCH_PIN    (7)
 #define STEPS_PIN (3)
 #define DIR_PIN (4)
-#define BTM_LIMIT_SWITCH_PIN (5)  // rocket's home position
-#define TOP_LIMIT_SWITCH_PIN (8)  // rocket's home position
-#define SERVO_PIN (6)
+#define BTM_LIMIT_SWITCH_PIN (2)  // rocket's home position
+#define MOTOR_A (5)
+#define MOTOR_B (6)
 #define LED_DATA_PIN (9)
-#define WINNING_SENSOR_PIN (7)   // winning switch pin in the RPi (GPIO12)
+#define WINNING_SENSOR_PIN (13)   // winning switch pin in the RPi (GPIO12)
 #define START_GAME_PIN (11)       // coin switch pin in the RPi (GPIO25)
 #define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (10)  // limit switch f/b pin in the RPi (GPIO16)
@@ -40,12 +34,10 @@
 #define LDR_3_PIN (A2)
 #define LDR_4_PIN (A3)
 
+#define RESET_MS (2000)
 #define NUM_LEDS (87)
 #define LED_BRIGHTNESS (50)
-#define WINNING_FX_TIME (2000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
-#define SERVO_UPDATE_MS (100)
-#define SERVO_MIN_POSITION (0)
-#define SERVO_MAX_POSITION (180)
+#define WINNING_FX_TIME (2000)  //NOTICE    : make sure the number isn't too big. User might start a new game before the effect ends.
 #define LDR_1_LIMIT (200)
 #define LDR_2_LIMIT (200)
 #define LDR_3_LIMIT (150)
@@ -62,13 +54,12 @@
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
 Button coin_btn(START_GAME_PIN);
 BasicStepperDriver rocket(MOTOR_STEPS, DIR_PIN, STEPS_PIN);
-Servo wheel_servo;
-Timer servo_update_timer;
+Timer reset_timer;
 
 bool status = 0;
+bool ls_state = 0;
 int8_t score = 0;
 uint8_t last_score = 0;
-uint8_t servo_position = SERVO_MAX_POSITION;
 int increment_steps = 1;
 uint16_t ldr_1_current_read = 0;
 uint16_t ldr_1_prev_read = 0;
@@ -83,6 +74,26 @@ void delay_millis(uint32_t ms) {
     uint32_t start_ms = millis();
     while (millis() - start_ms < ms)
         ;
+}
+
+void sweep_motor() {
+    if (digitalRead(L_LIMIT_SWITCH_PIN) && !digitalRead(R_LIMIT_SWITCH_PIN)) ls_state = 0;
+    if (!digitalRead(L_LIMIT_SWITCH_PIN) && digitalRead(R_LIMIT_SWITCH_PIN)) ls_state = 1;
+
+    // Serial.print(digitalRead(L_LIMIT_SWITCH_PIN));
+    // Serial.print(" ");
+    // Serial.print(digitalRead(R_LIMIT_SWITCH_PIN));
+    // Serial.print(" ");
+    // Serial.println(ls_state);
+    
+    if (ls_state) {  //move CW
+        digitalWrite(MOTOR_A , LOW);
+        digitalWrite(MOTOR_B , HIGH);
+    }
+    else if (!ls_state) {    //move CCW
+        digitalWrite(MOTOR_A , HIGH);
+        digitalWrite(MOTOR_B , LOW);
+    }
 }
 
 void reset_rocket_position() {  //go down until the limit switch is pressed
@@ -124,13 +135,6 @@ void reset_game() {
     strip.show();
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     last_score = 4;
-}
-
-void servo_sweep() {
-    servo_position -= increment_steps;
-    wheel_servo.write(servo_position);
-    if (servo_position <= SERVO_MIN_POSITION || servo_position - 1 >= SERVO_MAX_POSITION) increment_steps = -increment_steps;
-    delay_millis(100);
 }
 
 void winning_check() {
@@ -210,7 +214,7 @@ void update_score() {
             if (!status) {  //status var is to make sure what inside will be called only once.
                 status++;
                 winning();
-                reset_game();
+                reset_timer.start();
             }
             // last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
             break;
@@ -243,6 +247,9 @@ void setup() {
     coin_btn.begin();
     rocket.begin(RPM, MICROSTEPS);
 
+    reset_timer.setCallback(reset_game);
+    reset_timer.setTimeout(RESET_MS);
+
     Serial.println(F(
         "____________________________________\n"
         "\n"
@@ -252,17 +259,13 @@ void setup() {
         "Made by KD Technology\n"
         "\n"));
 
-    wheel_servo.attach(SERVO_PIN);
-    wheel_servo.write(SERVO_MIN_POSITION);
-
-    servo_update_timer.setCallback(servo_sweep);
-    servo_update_timer.setInterval(SERVO_UPDATE_MS);
-
-    // Declare pins as output:
     pinMode(STEPS_PIN, OUTPUT);
     pinMode(DIR_PIN, OUTPUT);
+    pinMode(MOTOR_A, OUTPUT);
+    pinMode(MOTOR_B, OUTPUT);
     pinMode(BTM_LIMIT_SWITCH_PIN, INPUT_PULLUP);
-    pinMode(TOP_LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    pinMode(R_LIMIT_SWITCH_PIN, INPUT_PULLUP);
+    pinMode(L_LIMIT_SWITCH_PIN, INPUT_PULLUP);
     pinMode(LDR_1_PIN, INPUT);
     pinMode(LDR_2_PIN, INPUT);
     pinMode(LDR_3_PIN, INPUT);
@@ -274,13 +277,12 @@ void setup() {
     strip.setBrightness(LED_BRIGHTNESS);
     strip.show();  // Turn OFF all pixels
 
-    // servo_update_timer.start();
     // reset_game();
-    reset_rocket_position();
+    // reset_rocket_position();
 }
 
 void loop() {
-    // servo_sweep();
     // check_for_game();
-    update_score();
+    // update_score();
+    sweep_motor();
 }
