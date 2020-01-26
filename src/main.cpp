@@ -37,15 +37,15 @@
 #define WINNING_FX_TIME (2000)  //NOTICE    : make sure the number isn't too big. User might start a new game before the effect ends.
 #define LDR_1_LIMIT (250)
 #define LDR_2_LIMIT (250)
-#define LDR_3_LIMIT (250)
+#define LDR_3_LIMIT (230)
 #define LDR_4_LIMIT (250)
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
 #define DEG_PER_LEVEL (370)
 #define LEVEL_0_1_DEG (DEG_PER_LEVEL)
-#define LEVEL_1_2_DEG (550)
-#define LEVEL_2_3_DEG (550)
+#define LEVEL_1_2_DEG (610)
+#define LEVEL_2_3_DEG (610)
 #define LEVEL_3_4_DEG (550)
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
