@@ -26,9 +26,6 @@
 #define MOTOR_B (6)
 #define LED_DATA_PIN (9)
 #define WINNING_SENSOR_PIN (13)   // winning switch pin in the RPi (GPIO12)
-#define START_GAME_PIN (11)       // coin switch pin in the RPi (GPIO25)
-#define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
-#define LIMIT_SWITCH_1_PIN (10)  // limit switch f/b pin in the RPi (GPIO16)
 #define LDR_1_PIN (A0)
 #define LDR_2_PIN (A1)
 #define LDR_3_PIN (A2)
@@ -52,7 +49,6 @@
 #define LEVEL_3_4_DEG (1.5 * DEG_PER_LEVEL)
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
-Button coin_btn(START_GAME_PIN);
 BasicStepperDriver rocket(MOTOR_STEPS, DIR_PIN, STEPS_PIN);
 Timer reset_timer;
 
@@ -210,7 +206,7 @@ void update_score() {
             last_score = 3;
             break;
         case 4:
-            // winning_check();
+            winning_check();
             if (!status) {  //status var is to make sure what inside will be called only once.
                 status++;
                 winning();
@@ -221,30 +217,8 @@ void update_score() {
     }
 }
 
-void check_for_game() {
-    if (coin_btn.pressed()) {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
-    }
-    /*
-    limits_state = digitalRead(LIMIT_SWITCH_1_PIN) && digitalRead(LIMIT_SWITCH_2_PIN);
-
-    //NOTICE: the arduino doesn't know a game starts if someone plays manually. For that I need to add a condition down here.
-    if (limits_state) {  // claw moved and GAME ON
-        // Serial.println("GAME ON!!!");
-        prev_limits_state = true;
-    }
-
-    if (!digitalRead(LIMIT_SWITCH_1_PIN) && !digitalRead(LIMIT_SWITCH_2_PIN) && prev_limits_state) {  // GAME OVER...
-        strip.clear();
-        strip.show();
-        prev_limits_state = false;
-    }
-    */
-}
-
 void setup() {
     Serial.begin(115200);
-    coin_btn.begin();
     rocket.begin(RPM, MICROSTEPS);
 
     reset_timer.setCallback(reset_game);
@@ -263,6 +237,7 @@ void setup() {
     pinMode(DIR_PIN, OUTPUT);
     pinMode(MOTOR_A, OUTPUT);
     pinMode(MOTOR_B, OUTPUT);
+    pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(BTM_LIMIT_SWITCH_PIN, INPUT_PULLUP);
     pinMode(R_LIMIT_SWITCH_PIN, INPUT_PULLUP);
     pinMode(L_LIMIT_SWITCH_PIN, INPUT_PULLUP);
@@ -270,8 +245,6 @@ void setup() {
     pinMode(LDR_2_PIN, INPUT);
     pinMode(LDR_3_PIN, INPUT);
     pinMode(LDR_4_PIN, INPUT);
-    pinMode(LIMIT_SWITCH_1_PIN, INPUT);  // When pressed = 0
-    pinMode(LIMIT_SWITCH_2_PIN, INPUT);  // When depressed = 1
 
     strip.begin();
     strip.setBrightness(LED_BRIGHTNESS);
@@ -282,7 +255,6 @@ void setup() {
 }
 
 void loop() {
-    // check_for_game();
     update_score();
     sweep_motor();
 
