@@ -11,21 +11,21 @@
 
 #include <Adafruit_NeoPixel.h>
 #include <Button.h>  // https://github.com/madleech/Button
-#include <timer.h>  // https://github.com/brunocalou/Timer
+#include <timer.h>   // https://github.com/brunocalou/Timer
 #include <timerManager.h>
-#include "BasicStepperDriver.h" // https://github.com/laurb9/StepperDriver
+#include "BasicStepperDriver.h"  // https://github.com/laurb9/StepperDriver
 
 #define DEBUG
 
-#define R_LIMIT_SWITCH_PIN    (8)
-#define L_LIMIT_SWITCH_PIN    (7)
+#define R_LIMIT_SWITCH_PIN (8)
+#define L_LIMIT_SWITCH_PIN (7)
 #define STEPS_PIN (3)
 #define DIR_PIN (4)
 #define BTM_LIMIT_SWITCH_PIN (2)  // rocket's home position
 #define MOTOR_A (5)
 #define MOTOR_B (6)
 #define LED_DATA_PIN (9)
-#define WINNING_SENSOR_PIN (13)   // winning switch pin in the RPi (GPIO12)
+#define WINNING_SENSOR_PIN (13)  // winning switch pin in the RPi (GPIO12)
 #define LDR_1_PIN (A0)
 #define LDR_2_PIN (A1)
 #define LDR_3_PIN (A2)
@@ -42,11 +42,11 @@
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
-#define DEG_PER_LEVEL (360)
+#define DEG_PER_LEVEL (370)
 #define LEVEL_0_1_DEG (DEG_PER_LEVEL)
-#define LEVEL_1_2_DEG (1.5 * DEG_PER_LEVEL)
-#define LEVEL_2_3_DEG (1.5 * DEG_PER_LEVEL)
-#define LEVEL_3_4_DEG (1.5 * DEG_PER_LEVEL)
+#define LEVEL_1_2_DEG (550)
+#define LEVEL_2_3_DEG (550)
+#define LEVEL_3_4_DEG (550)
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
 BasicStepperDriver rocket(MOTOR_STEPS, DIR_PIN, STEPS_PIN);
@@ -81,30 +81,29 @@ void sweep_motor() {
     // Serial.print(digitalRead(R_LIMIT_SWITCH_PIN));
     // Serial.print(" ");
     // Serial.println(ls_state);
-    
+
     if (ls_state) {  //move CW
-        digitalWrite(MOTOR_A , LOW);
-        digitalWrite(MOTOR_B , HIGH);
-    }
-    else if (!ls_state) {    //move CCW
-        digitalWrite(MOTOR_A , HIGH);
-        digitalWrite(MOTOR_B , LOW);
+        digitalWrite(MOTOR_A, LOW);
+        digitalWrite(MOTOR_B, HIGH);
+    } else if (!ls_state) {  //move CCW
+        digitalWrite(MOTOR_A, HIGH);
+        digitalWrite(MOTOR_B, LOW);
     }
 }
 
 void reset_rocket_position() {  //go down until the limit switch is pressed
-  while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {
-    digitalWrite(DIR_PIN, LOW);      // (HIGH = anti-clockwise / LOW = clockwise)
-    digitalWrite(STEPS_PIN, HIGH);
-    delay(5);                       // Delay to slow down speed of Stepper
-    digitalWrite(STEPS_PIN, LOW);
-    delay(5);
-  }
+    while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {
+        digitalWrite(DIR_PIN, LOW);  // (HIGH = anti-clockwise / LOW = clockwise)
+        digitalWrite(STEPS_PIN, HIGH);
+        delay(5);  // Delay to slow down speed of Stepper
+        digitalWrite(STEPS_PIN, LOW);
+        delay(5);
+    }
 }
 
 void colorWipe(uint32_t c, uint8_t wait) {
     for (uint8_t l = 0; l < 5; l++) {
-        for (uint16_t i=0; i<strip.numPixels(); i++) {
+        for (uint16_t i = 0; i < strip.numPixels(); i++) {
             strip.setPixelColor(i, c);
             strip.show();
             delay_millis(wait);
@@ -114,10 +113,10 @@ void colorWipe(uint32_t c, uint8_t wait) {
     }
 }
 
-void winning() {    // winning effect
+void winning() {  // winning effect
     rocket.rotate(LEVEL_3_4_DEG);
 
-    colorWipe(strip.Color(255, 0, 0), 10); // Red
+    colorWipe(strip.Color(255, 0, 0), 10);  // Red
     strip.clear();
     strip.show();
 }
@@ -130,7 +129,6 @@ void reset_game() {
     strip.clear();
     strip.show();
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    last_score = 4;
 }
 
 void winning_check() {
@@ -189,20 +187,19 @@ void update_score() {
             break;
         case 1:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 0) rocket.rotate(LEVEL_0_1_DEG);  // level up
+            if (last_score == 0) rocket.rotate(LEVEL_0_1_DEG);   // level up
             if (last_score == 2) rocket.rotate(-LEVEL_1_2_DEG);  // level down
             last_score = 1;
             break;
         case 2:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 1) rocket.rotate(LEVEL_1_2_DEG);  // level up
+            if (last_score == 1) rocket.rotate(LEVEL_1_2_DEG);   // level up
             if (last_score == 3) rocket.rotate(-LEVEL_2_3_DEG);  // level down
             last_score = 2;
             break;
         case 3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (last_score == 2) rocket.rotate(LEVEL_2_3_DEG);  // level up
-            if (last_score == 4) rocket.rotate(-1.5 * DEG_PER_LEVEL);  // level down
             last_score = 3;
             break;
         case 4:
@@ -212,7 +209,6 @@ void update_score() {
                 winning();
                 reset_timer.start();
             }
-            // last_score = 4;     //NOTICE: I might have to change this to 0 or it doesn't matter
             break;
     }
 }
