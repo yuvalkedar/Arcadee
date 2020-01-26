@@ -1,10 +1,10 @@
 /*
 	Author: Yuval Kedar - KD Technology
 	Instagram: https://www.instagram.com/kd_technology/
-	Date: Nov 19
-	Dev board: Arduino Uno
+	Date: Jan 2020
+	Dev board: Arduino nano
 	
-	Nerf-Gun controller for Gigantic - Clawee.
+	Spaceship Machine (progress) for Gigantic - Clawee.
 	
 	Arduino Uno communicates with RPi.
 */
