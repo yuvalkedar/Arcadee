@@ -35,10 +35,10 @@
 #define NUM_LEDS (87)
 #define LED_BRIGHTNESS (50)
 #define WINNING_FX_TIME (2000)  //NOTICE    : make sure the number isn't too big. User might start a new game before the effect ends.
-#define LDR_1_LIMIT (250)
-#define LDR_2_LIMIT (250)
-#define LDR_3_LIMIT (175)
-#define LDR_4_LIMIT (220)
+#define LDR_1_LIMIT (190)
+#define LDR_2_LIMIT (180)
+#define LDR_3_LIMIT (135)
+#define LDR_4_LIMIT (155)
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
@@ -122,7 +122,7 @@ void winning() {  // winning effect
 }
 
 void reset_game() {
-    Serial.println("RESTART GAME");
+    // Serial.println("RESTART GAME");
     if (score != 0) rocket.rotate(-(LEVEL_3_4_DEG + LEVEL_2_3_DEG + LEVEL_1_2_DEG + LEVEL_0_1_DEG));
     status = 0;
     score = 0;
@@ -203,8 +203,8 @@ void update_score() {
             last_score = 3;
             break;
         case 4:
-            winning_check();
             if (!status) {  //status var is to make sure what inside will be called only once.
+                winning_check();
                 status++;
                 winning();
                 reset_timer.start();
