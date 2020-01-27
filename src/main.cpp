@@ -178,7 +178,7 @@ void update_score() {
     Serial.println(last_score);
 #endif
 
-    //TODO: add colorWipe() by score level
+    //FIXME: not always detecting sensors. Sometimes the ball passes and score isn't updated.
     switch (score) {
         case 0:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
