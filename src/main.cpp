@@ -15,7 +15,7 @@
 #include <timerManager.h>
 #include "BasicStepperDriver.h"  // https://github.com/laurb9/StepperDriver
 
-#define DEBUG
+// #define DEBUG
 
 #define R_LIMIT_SWITCH_PIN (8)
 #define L_LIMIT_SWITCH_PIN (7)
@@ -37,8 +37,8 @@
 #define WINNING_FX_TIME (2000)  //NOTICE    : make sure the number isn't too big. User might start a new game before the effect ends.
 #define LDR_1_LIMIT (250)
 #define LDR_2_LIMIT (250)
-#define LDR_3_LIMIT (230)
-#define LDR_4_LIMIT (250)
+#define LDR_3_LIMIT (175)
+#define LDR_4_LIMIT (220)
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
@@ -246,7 +246,10 @@ void setup() {
     strip.setBrightness(LED_BRIGHTNESS);
     strip.show();  // Turn OFF all pixels
 
-    // reset_game();
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
+    status = 0;
+    score = 0;
+    last_score = 0;
     reset_rocket_position();
 }
 
