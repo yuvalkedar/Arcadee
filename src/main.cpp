@@ -34,11 +34,11 @@
 #define RESET_MS (2000)
 #define NUM_LEDS (87)
 #define LED_BRIGHTNESS (50)
-#define WINNING_FX_TIME (2000)  //NOTICE    : make sure the number isn't too big. User might start a new game before the effect ends.
+#define WINNING_FX_TIME (2000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
 #define LDR_1_LIMIT (100)
-#define LDR_2_LIMIT (100)
-#define LDR_3_LIMIT (100)
-#define LDR_4_LIMIT (100)
+#define LDR_2_LIMIT (109)
+#define LDR_3_LIMIT (90)
+#define LDR_4_LIMIT (95)
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
@@ -57,14 +57,10 @@ bool ls_state = 0;
 int8_t score = 0;
 uint8_t last_score = 0;
 int increment_steps = 1;
-uint16_t ldr_1_current_read = 0;
-uint16_t ldr_1_prev_read = 0;
-uint16_t ldr_2_current_read = 0;
-uint16_t ldr_2_prev_read = 0;
-uint16_t ldr_3_current_read = 0;
-uint16_t ldr_3_prev_read = 0;
-uint16_t ldr_4_current_read = 0;
-uint16_t ldr_4_prev_read = 0;
+uint16_t ldr_1_current_read;
+uint16_t ldr_2_current_read;
+uint16_t ldr_3_current_read;
+uint16_t ldr_4_current_read;
 
 void delay_millis(uint32_t ms) {
     uint32_t start_ms = millis();
@@ -145,23 +141,19 @@ void update_score() {
     ldr_3_current_read = analogRead(LDR_3_PIN);
     ldr_4_current_read = analogRead(LDR_4_PIN);
 
-    if ((ldr_1_current_read > LDR_1_LIMIT && ldr_1_prev_read < LDR_1_LIMIT) || (ldr_3_current_read > LDR_3_LIMIT && ldr_3_prev_read < LDR_3_LIMIT)) {
+    if ((ldr_1_current_read > LDR_1_LIMIT) || (ldr_3_current_read > LDR_3_LIMIT)) {
         score++;
         if (score >= 4) {
             score = 4;
         }
     }
-    ldr_1_prev_read = ldr_1_current_read;
-    ldr_3_prev_read = ldr_3_current_read;
 
-    if ((ldr_2_current_read > LDR_2_LIMIT && ldr_2_prev_read < LDR_2_LIMIT) || (ldr_4_current_read > LDR_4_LIMIT && ldr_4_prev_read < LDR_4_LIMIT)) {
+    if ((ldr_2_current_read > LDR_2_LIMIT) || (ldr_4_current_read > LDR_4_LIMIT)) {
         score--;
         if (score <= 0) {
             score = 0;
         }
     }
-    ldr_2_prev_read = ldr_2_current_read;
-    ldr_4_prev_read = ldr_4_current_read;
 
 #ifdef DEBUG
     Serial.println();
@@ -178,7 +170,6 @@ void update_score() {
     Serial.println(last_score);
 #endif
 
-    //FIXME: not always detecting sensors. Sometimes the ball passes and score isn't updated.
     switch (score) {
         case 0:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
@@ -244,6 +235,7 @@ void setup() {
 
     strip.begin();
     strip.setBrightness(LED_BRIGHTNESS);
+    strip.clear();
     strip.show();  // Turn OFF all pixels
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
