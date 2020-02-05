@@ -41,6 +41,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define MOTOR_STEPS (300)
 #define RPM (120)
 #define MICROSTEPS (1)
+#define STEPS (5)
+
 #define PITCH_BTN_PIN (33)   // Front pin in the RPi (GPIO17) (UP & DOWN)
 #define YAW_BTN_PIN (32)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define START_GAME_PIN (31)  // coin switch pin in the RPi (GPIO25)
@@ -174,12 +176,12 @@ void yaw_update() {
     yaw.write(yaw_position);
 }
 
-// void pitch_update() {
-//     if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
-//     pitch.write(pitch_position);
+void pitch_update() {
+    //     if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
+    //     pitch.write(pitch_position);
 
-stepper.move(-MOTOR_STEPS* MICROSTEPS);
-// }
+    stepper.rotate(STEPS);
+}
 
 void delay_cb() {
     digitalWrite(BLOWER_MOTOR_PIN, LOW);
