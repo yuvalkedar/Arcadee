@@ -92,10 +92,10 @@ Timer yaw_update_timer;
 Timer delay_timer;  // timer to delay the blower's operation
 
 Servo yaw;
-// Servo pitch;
 
+int8_t increment = 1;
 volatile uint8_t yaw_position;
-// volatile uint8_t pitch_position;
+volatile uint8_t pitch_position;
 
 // uint16_t clowns_mask = 0x0000;
 uint8_t clowns_pins[] = {CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, CLOWN_5, CLOWN_6, CLOWN_7, CLOWN_8, CLOWN_9, CLOWN_10, CLOWN_11, CLOWN_12, CLOWN_13, CLOWN_14};
@@ -177,10 +177,13 @@ void yaw_update() {
 }
 
 void pitch_update() {
-    //     if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
     //     pitch.write(pitch_position);
 
+    //     if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
+    // aiming.write(position);
+    pitch_position -= increment;
     stepper.rotate(STEPS);
+    if (position <= AIMING_SERVO_MIN || position - 1 >= AIMING_SERVO_MAX) increment = -increment;
 }
 
 void delay_cb() {
