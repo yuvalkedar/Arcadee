@@ -13,6 +13,7 @@
 #include <Servo.h>
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
+#include "BasicStepperDriver.h"
 
 // #define DEBUG
 
@@ -25,7 +26,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 
 // OUTPUTS
 #define YAW_SERVO_PIN (5)
-#define PITCH_SERVO_PIN (6)
+#define STEPPER_STEPS_PIN (6)
+#define STEPPER_DIR_PIN (7)
 #define LIMIT_SWITCH_2_PIN (16)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (17)  // limit switch f/b pin in the RPi (GPIO16)
 #define LAUNCHER_MOTOR_PIN (20)  // shooting motor
@@ -36,6 +38,9 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define MID_ROW_MOTOR_PIN (24)
 #define BTM_ROW_MOTOR_PIN (25)
 // INPUTS
+#define MOTOR_STEPS (300)
+#define RPM (120)
+#define MICROSTEPS (1)
 #define PITCH_BTN_PIN (33)   // Front pin in the RPi (GPIO17) (UP & DOWN)
 #define YAW_BTN_PIN (32)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define START_GAME_PIN (31)  // coin switch pin in the RPi (GPIO25)
@@ -62,13 +67,15 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define YAW_UPDATE_MS (140)
 #define PITCH_UPDATE_MS (20)
 #define RESET_GAME_MS (3000)
-#define PITCH_MIN (0)
-#define PITCH_MAX (180)
-#define PITCH_RESTART_POSITION (180)
+// #define PITCH_MIN (0)
+// #define PITCH_MAX (180)
+// #define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
 #define YAW_MAX (180)
 #define YAW_RESTART_POSITION (180)
 #define DELAY_MS (2000)
+
+BasicStepperDriver stepper(MOTOR_STEPS, DIR, STEP);
 
 Button start_btn(START_GAME_PIN);  //gets coin from the RPi
 Button yaw_btn(YAW_BTN_PIN);       // move "right"
@@ -79,14 +86,14 @@ Button btm_sensor(BTM_ROW_SENSOR_PIN);
 
 Timer reset_timer;
 Timer yaw_update_timer;
-Timer pitch_update_timer;
+// Timer pitch_update_timer;
 Timer delay_timer;  // timer to delay the blower's operation
 
 Servo yaw;
-Servo pitch;
+// Servo pitch;
 
 volatile uint8_t yaw_position;
-volatile uint8_t pitch_position;
+// volatile uint8_t pitch_position;
 
 // uint16_t clowns_mask = 0x0000;
 uint8_t clowns_pins[] = {CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, CLOWN_5, CLOWN_6, CLOWN_7, CLOWN_8, CLOWN_9, CLOWN_10, CLOWN_11, CLOWN_12, CLOWN_13, CLOWN_14};
@@ -145,8 +152,8 @@ void game_start() {  // resets all parameters
     yaw_position = YAW_RESTART_POSITION;
     yaw.write(yaw_position);  // restart yaw position
 
-    pitch_position = PITCH_RESTART_POSITION;
-    pitch.write(pitch_position);  // restart pitch position
+    // pitch_position = PITCH_RESTART_POSITION;
+    // pitch.write(pitch_position);  // restart pitch position
 }
 
 void reset_cb() {
@@ -158,8 +165,8 @@ void reset_cb() {
     yaw_position = YAW_RESTART_POSITION;
     yaw.write(yaw_position);  // restart yaw position
 
-    pitch_position = PITCH_RESTART_POSITION;
-    pitch.write(pitch_position);  // restart pitch position
+    // pitch_position = PITCH_RESTART_POSITION;
+    // pitch.write(pitch_position);  // restart pitch position
 }
 
 void yaw_update() {
@@ -167,10 +174,12 @@ void yaw_update() {
     yaw.write(yaw_position);
 }
 
-void pitch_update() {
-    if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
-    pitch.write(pitch_position);
-}
+// void pitch_update() {
+//     if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
+//     pitch.write(pitch_position);
+
+stepper.move(-MOTOR_STEPS* MICROSTEPS);
+// }
 
 void delay_cb() {
     digitalWrite(BLOWER_MOTOR_PIN, LOW);
@@ -181,12 +190,12 @@ void setup() {
     Serial.begin(115200);
     start_btn.begin();
     yaw_btn.begin();
-    pitch_btn.begin();
+    stepper.begin(RPM, MICROSTEPS);
 
     yaw.attach(YAW_SERVO_PIN);
     yaw.write(YAW_RESTART_POSITION);
-    pitch.attach(PITCH_SERVO_PIN);
-    pitch.write(PITCH_RESTART_POSITION);
+    // pitch.attach(PITCH_SERVO_PIN);
+    // pitch.write(PITCH_RESTART_POSITION);
 
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
@@ -194,8 +203,8 @@ void setup() {
     yaw_update_timer.setCallback(yaw_update);
     yaw_update_timer.setInterval(YAW_UPDATE_MS);
 
-    pitch_update_timer.setCallback(pitch_update);
-    pitch_update_timer.setInterval(PITCH_UPDATE_MS);
+    // pitch_update_timer.setCallback(pitch_update);
+    // pitch_update_timer.setInterval(PITCH_UPDATE_MS);
 
     delay_timer.setCallback(delay_cb);  //timer to delay blower's operation
     delay_timer.setTimeout(DELAY_MS);
