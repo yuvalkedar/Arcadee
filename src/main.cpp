@@ -40,7 +40,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define BTM_ROW_MOTOR_PIN (25)
 // INPUTS
 #define MOTOR_STEPS (300)
-#define RPM (120)
+#define RPM (100)
 #define MICROSTEPS (1)
 #define STEPS (5)
 
@@ -74,8 +74,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define YAW_UPDATE_MS (80)
 #define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
-#define YAW_MAX (180)
-#define YAW_RESTART_POSITION (180)
+#define YAW_MAX (60)
 #define DELAY_MS (2000)
 
 BasicStepperDriver stepper(MOTOR_STEPS, STEPPER_DIR_PIN, STEPPER_STEPS_PIN);
@@ -93,8 +92,7 @@ Timer delay_timer;  // timer to delay the blower's operation
 Servo pitch;
 
 uint8_t steps = STEPS;
-uint16_t counter = 0;
-volatile uint8_t yaw_position;
+volatile int yaw_position;
 volatile uint8_t pitch_position;
 
 // uint16_t clowns_mask = 0x0000;
@@ -167,7 +165,7 @@ void game_start() {  // resets all parameters
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
 
-    yaw_position = YAW_MAX;
+    yaw_position = YAW_MIN;
     reset_nerf_position();  // restart yaw position
 }
 
@@ -180,14 +178,19 @@ void reset_cb() {
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
 
-    yaw_position = YAW_MAX;
+    yaw_position = YAW_MIN;
     reset_nerf_position();  // restart yaw position
 }
 
 void yaw_update() {
-    counter++;
     stepper.rotate(-steps);
-    if (counter <= YAW_MIN || counter - 1 >= YAW_MAX) steps = -steps;
+    yaw_position++;
+    if (yaw_position <= YAW_MIN || yaw_position - 1 >= YAW_MAX) {
+        steps = 0;
+    } else
+        steps = 5;
+    // Serial.print("count: ");
+    // Serial.println(yaw_position);
 }
 
 void pitch_update() {
