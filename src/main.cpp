@@ -71,8 +71,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
-#define YAW_UPDATE_MS (140)
-#define PITCH_RESTART_POSITION (0)
+#define YAW_UPDATE_MS (80)
+#define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
 #define YAW_MAX (180)
 #define YAW_RESTART_POSITION (180)
@@ -92,7 +92,8 @@ Timer pitch_update_timer;
 Timer delay_timer;  // timer to delay the blower's operation
 Servo pitch;
 
-int8_t increment = 1;
+uint8_t steps = STEPS;
+uint16_t counter = 0;
 volatile uint8_t yaw_position;
 volatile uint8_t pitch_position;
 
@@ -166,6 +167,7 @@ void game_start() {  // resets all parameters
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
 
+    yaw_position = YAW_MAX;
     reset_nerf_position();  // restart yaw position
 }
 
@@ -178,13 +180,14 @@ void reset_cb() {
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
 
+    yaw_position = YAW_MAX;
     reset_nerf_position();  // restart yaw position
 }
 
 void yaw_update() {
-    yaw_position -= increment;
-    stepper.rotate(STEPS);
-    if (yaw_position <= YAW_MIN || yaw_position - 1 >= YAW_MAX) increment = -increment;
+    counter++;
+    stepper.rotate(-steps);
+    if (counter <= YAW_MIN || counter - 1 >= YAW_MAX) steps = -steps;
 }
 
 void pitch_update() {
