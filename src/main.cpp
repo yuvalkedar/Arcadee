@@ -44,8 +44,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define MICROSTEPS (1)
 #define STEPS (5)
 
-#define YAW_BTN_PIN (33)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
-#define PITCH_BTN_PIN (32)   // Front pin in the RPi (GPIO17) (UP & DOWN)
+#define YAW_BTN_PIN (32)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define PITCH_BTN_PIN (33)   // Front pin in the RPi (GPIO17) (UP & DOWN)
 #define START_GAME_PIN (31)  // coin switch pin in the RPi (GPIO25)
 #define TOP_ROW_SENSOR_PIN (30)
 #define MID_ROW_SENSOR_PIN (29)
@@ -78,7 +78,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define YAW_RESTART_POSITION (180)
 #define DELAY_MS (2000)
 
-BasicStepperDriver stepper(MOTOR_STEPS, DIR, STEP);
+BasicStepperDriver stepper(MOTOR_STEPS, STEPPER_DIR_PIN, STEPPER_STEPS_PIN);
 
 Button start_btn(START_GAME_PIN);  //gets coin from the RPi
 Button yaw_btn(YAW_BTN_PIN);       // move "right"
@@ -90,7 +90,7 @@ Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
 Timer delay_timer;  // timer to delay the blower's operation
-Servo yaw;
+Servo pitch;
 
 int8_t increment = 1;
 volatile uint8_t yaw_position;
@@ -102,7 +102,7 @@ uint8_t clowns_pins[] = {CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, CLOWN_5, CLOWN_6, C
 //TODO: make it work without delay
 void reset_nerf_position() {  //go left until the limit switch is pressed
     while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {
-        digitalWrite(STEPPER_DIR_PIN, LOW);  // (HIGH = CCW / LOW = CW)
+        digitalWrite(STEPPER_DIR_PIN, HIGH);  // (HIGH = CCW / LOW = CW)
         digitalWrite(STEPPER_STEPS_PIN, HIGH);
         delay(5);  // Delay to slow down speed of Stepper
         digitalWrite(STEPPER_STEPS_PIN, LOW);
@@ -182,7 +182,7 @@ void reset_cb() {
 }
 
 void yaw_update() {
-    yaw_position += increment;
+    yaw_position -= increment;
     stepper.rotate(STEPS);
     if (yaw_position <= YAW_MIN || yaw_position - 1 >= YAW_MAX) increment = -increment;
 }
