@@ -28,6 +28,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define PITCH_SERVO_PIN (5)
 #define STEPPER_STEPS_PIN (6)
 #define STEPPER_DIR_PIN (7)
+#define BTM_LIMIT_SWITCH_PIN (8)
 #define LIMIT_SWITCH_2_PIN (16)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (17)  // limit switch f/b pin in the RPi (GPIO16)
 #define LAUNCHER_MOTOR_PIN (20)  // shooting motor
@@ -98,6 +99,17 @@ volatile uint8_t pitch_position;
 // uint16_t clowns_mask = 0x0000;
 uint8_t clowns_pins[] = {CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, CLOWN_5, CLOWN_6, CLOWN_7, CLOWN_8, CLOWN_9, CLOWN_10, CLOWN_11, CLOWN_12, CLOWN_13, CLOWN_14};
 
+//TODO: make it work without delay
+void reset_nerf_position() {  //go left until the limit switch is pressed
+    while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {
+        digitalWrite(STEPPER_DIR_PIN, LOW);  // (HIGH = CCW / LOW = CW)
+        digitalWrite(STEPPER_STEPS_PIN, HIGH);
+        delay(5);  // Delay to slow down speed of Stepper
+        digitalWrite(STEPPER_STEPS_PIN, LOW);
+        delay(5);
+    }
+}
+
 void limit_switches(bool state) {  //controls home sensors
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
     digitalWrite(LIMIT_SWITCH_2_PIN, state);
@@ -112,14 +124,16 @@ uint16_t get_clowns_state() {
     return clowns_mask;
 }
 
-// uint16_t get_clowns_state() {
-//     uint16_t clowns_mask = 0;
-//     for (int i = 13; i >= 0; --i) {
-//         clowns_mask <<= 1;
-//         clowns_mask |= (digitalRead(clowns_pins[i]) == HIGH);
-//     }
-//     return clowns_mask;
-// }
+/*
+uint16_t get_clowns_state() {
+    uint16_t clowns_mask = 0;
+    for (int i = 13; i >= 0; --i) {
+        clowns_mask <<= 1;
+        clowns_mask |= (digitalRead(clowns_pins[i]) == HIGH);
+    }
+    return clowns_mask;
+}
+*/
 
 void winning_check(uint16_t mask) {
     if ((mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
@@ -152,9 +166,7 @@ void game_start() {  // resets all parameters
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
 
-    //FIXME: need to change the parameter value and duplicate it to the reset_cb() func
-    pitch_position = PITCH_RESTART_POSITION;
-    stepper.rotate(pitch_position);  // restart pitch position
+    reset_nerf_position();  // restart yaw position
 }
 
 void reset_cb() {
@@ -166,12 +178,11 @@ void reset_cb() {
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
 
-    // pitch_position = PITCH_RESTART_POSITION;
-    // pitch.write(pitch_position);  // restart pitch position
+    reset_nerf_position();  // restart yaw position
 }
 
 void yaw_update() {
-    yaw_position -= increment;
+    yaw_position += increment;
     stepper.rotate(STEPS);
     if (yaw_position <= YAW_MIN || yaw_position - 1 >= YAW_MAX) increment = -increment;
 }
@@ -202,8 +213,8 @@ void setup() {
     yaw_update_timer.setCallback(yaw_update);
     yaw_update_timer.setInterval(YAW_UPDATE_MS);
 
-    // pitch_update_timer.setCallback(pitch_update);
-    // pitch_update_timer.setInterval(PITCH_UPDATE_MS);
+    pitch_update_timer.setCallback(pitch_update);
+    pitch_update_timer.setInterval(PITCH_UPDATE_MS);
 
     delay_timer.setCallback(delay_cb);  //timer to delay blower's operation
     delay_timer.setTimeout(DELAY_MS);
@@ -215,6 +226,7 @@ void setup() {
     pinMode(YAW_BTN_PIN, INPUT);
     pinMode(PITCH_BTN_PIN, INPUT);
     pinMode(START_GAME_PIN, INPUT);
+    pinMode(BTM_LIMIT_SWITCH_PIN, INPUT_PULLUP);
 
     // DDRL |= B00000000;  //sets pins 49-42 as inputs
     for (uint8_t i = 0; i < 14; i++) {
@@ -242,6 +254,8 @@ void setup() {
         "\n"
         "Made by KD Technology\n"
         "\n"));
+
+    reset_nerf_position();
 }
 
 void loop() {
