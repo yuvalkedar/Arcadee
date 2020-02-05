@@ -25,7 +25,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 */
 
 // OUTPUTS
-#define YAW_SERVO_PIN (5)
+#define PITCH_SERVO_PIN (5)
 #define STEPPER_STEPS_PIN (6)
 #define STEPPER_DIR_PIN (7)
 #define LIMIT_SWITCH_2_PIN (16)  // limit switch r/l pin in the RPi (GPIO20)
@@ -43,8 +43,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define MICROSTEPS (1)
 #define STEPS (5)
 
-#define PITCH_BTN_PIN (33)   // Front pin in the RPi (GPIO17) (UP & DOWN)
-#define YAW_BTN_PIN (32)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define YAW_BTN_PIN (33)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
+#define PITCH_BTN_PIN (32)   // Front pin in the RPi (GPIO17) (UP & DOWN)
 #define START_GAME_PIN (31)  // coin switch pin in the RPi (GPIO25)
 #define TOP_ROW_SENSOR_PIN (30)
 #define MID_ROW_SENSOR_PIN (29)
@@ -66,12 +66,12 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_13 (37)
 #define CLOWN_14 (36)
 
-#define YAW_UPDATE_MS (140)
-#define PITCH_UPDATE_MS (20)
 #define RESET_GAME_MS (3000)
-// #define PITCH_MIN (0)
-// #define PITCH_MAX (180)
-// #define PITCH_RESTART_POSITION (180)
+#define PITCH_UPDATE_MS (20)
+#define PITCH_MIN (0)
+#define PITCH_MAX (180)
+#define YAW_UPDATE_MS (140)
+#define PITCH_RESTART_POSITION (0)
 #define YAW_MIN (0)
 #define YAW_MAX (180)
 #define YAW_RESTART_POSITION (180)
@@ -85,12 +85,10 @@ Button pitch_btn(PITCH_BTN_PIN);   // move "left"
 Button top_sensor(TOP_ROW_SENSOR_PIN);
 Button mid_sensor(MID_ROW_SENSOR_PIN);
 Button btm_sensor(BTM_ROW_SENSOR_PIN);
-
 Timer reset_timer;
 Timer yaw_update_timer;
-// Timer pitch_update_timer;
+Timer pitch_update_timer;
 Timer delay_timer;  // timer to delay the blower's operation
-
 Servo yaw;
 
 int8_t increment = 1;
@@ -151,11 +149,12 @@ void game_start() {  // resets all parameters
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     limit_switches(0);
 
-    yaw_position = YAW_RESTART_POSITION;
-    yaw.write(yaw_position);  // restart yaw position
+    pitch_position = PITCH_RESTART_POSITION;
+    pitch.write(pitch_position);  // restart pitch position
 
-    // pitch_position = PITCH_RESTART_POSITION;
-    // pitch.write(pitch_position);  // restart pitch position
+    //FIXME: need to change the parameter value and duplicate it to the reset_cb() func
+    pitch_position = PITCH_RESTART_POSITION;
+    stepper.rotate(pitch_position);  // restart pitch position
 }
 
 void reset_cb() {
@@ -164,26 +163,22 @@ void reset_cb() {
     digitalWrite(BLOWER_MOTOR_PIN, HIGH);
     digitalWrite(BELT_MOTOR_PIN, HIGH);
 
-    yaw_position = YAW_RESTART_POSITION;
-    yaw.write(yaw_position);  // restart yaw position
+    pitch_position = PITCH_RESTART_POSITION;
+    pitch.write(pitch_position);  // restart pitch position
 
     // pitch_position = PITCH_RESTART_POSITION;
     // pitch.write(pitch_position);  // restart pitch position
 }
 
 void yaw_update() {
-    if (--yaw_position <= YAW_MIN) yaw_position = YAW_MIN + 1;
-    yaw.write(yaw_position);
+    yaw_position -= increment;
+    stepper.rotate(STEPS);
+    if (yaw_position <= YAW_MIN || yaw_position - 1 >= YAW_MAX) increment = -increment;
 }
 
 void pitch_update() {
-    //     pitch.write(pitch_position);
-
-    //     if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
-    // aiming.write(position);
-    pitch_position -= increment;
-    stepper.rotate(STEPS);
-    if (position <= AIMING_SERVO_MIN || position - 1 >= AIMING_SERVO_MAX) increment = -increment;
+    if (--pitch_position <= PITCH_MIN) pitch_position = PITCH_MIN + 1;
+    pitch.write(pitch_position);
 }
 
 void delay_cb() {
@@ -195,12 +190,11 @@ void setup() {
     Serial.begin(115200);
     start_btn.begin();
     yaw_btn.begin();
+    pitch_btn.begin();
     stepper.begin(RPM, MICROSTEPS);
 
-    yaw.attach(YAW_SERVO_PIN);
-    yaw.write(YAW_RESTART_POSITION);
-    // pitch.attach(PITCH_SERVO_PIN);
-    // pitch.write(PITCH_RESTART_POSITION);
+    pitch.attach(PITCH_SERVO_PIN);
+    pitch.write(PITCH_RESTART_POSITION);
 
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
