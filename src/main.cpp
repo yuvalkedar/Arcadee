@@ -67,6 +67,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_13 (37)
 #define CLOWN_14 (36)
 
+#define BLOWER_ON_MS (10000)
 #define RESET_GAME_MS (3000)
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
@@ -75,7 +76,6 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
 #define YAW_MAX (60)
-#define DELAY_MS (2000)
 
 BasicStepperDriver stepper(MOTOR_STEPS, STEPPER_DIR_PIN, STEPPER_STEPS_PIN);
 
@@ -88,7 +88,7 @@ Button btm_sensor(BTM_ROW_SENSOR_PIN);
 Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
-Timer delay_timer;  // timer to delay the blower's operation
+Timer blower_timer;
 Servo pitch;
 
 uint8_t steps = STEPS;
@@ -172,7 +172,6 @@ void game_start() {  // resets all parameters
 void reset_cb() {
     limit_switches(0);
     digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
-    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
     digitalWrite(BELT_MOTOR_PIN, HIGH);
 
     pitch_position = PITCH_RESTART_POSITION;
@@ -180,6 +179,10 @@ void reset_cb() {
 
     yaw_position = YAW_MIN;
     reset_nerf_position();  // restart yaw position
+}
+
+void blower_off() {
+    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
 }
 
 void yaw_update() {
@@ -198,11 +201,6 @@ void pitch_update() {
     pitch.write(pitch_position);
 }
 
-void delay_cb() {
-    digitalWrite(BLOWER_MOTOR_PIN, LOW);
-    reset_timer.start();
-}
-
 void setup() {
     Serial.begin(115200);
     start_btn.begin();
@@ -216,14 +214,14 @@ void setup() {
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
 
+    blower_timer.setCallback(blower_off);
+    blower_timer.setTimeout(BLOWER_ON_MS);
+
     yaw_update_timer.setCallback(yaw_update);
     yaw_update_timer.setInterval(YAW_UPDATE_MS);
 
     pitch_update_timer.setCallback(pitch_update);
     pitch_update_timer.setInterval(PITCH_UPDATE_MS);
-
-    delay_timer.setCallback(delay_cb);  //timer to delay blower's operation
-    delay_timer.setTimeout(DELAY_MS);
 
     //TODO: Add for loop to define inputs and outputs OR define them using port manipulation
     pinMode(TOP_ROW_SENSOR_PIN, INPUT);
@@ -251,6 +249,7 @@ void setup() {
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     reset_cb();
+    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
 
     Serial.println(F(
         "________________________________\n"
@@ -290,8 +289,10 @@ void loop() {
 
     if (pitch_btn.released() && pitch_update_timer.isRunning()) {
         pitch_update_timer.stop();
-        delay_timer.start();
         digitalWrite(BELT_MOTOR_PIN, LOW);
+        digitalWrite(BLOWER_MOTOR_PIN, LOW);
+        reset_timer.start();
+        blower_timer.start();
     }
 
     winning_check(get_clowns_state());
