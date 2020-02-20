@@ -178,7 +178,7 @@ void reset_cb() {
     pitch.write(pitch_position);  // restart pitch position
 
     yaw_position = YAW_MIN;
-    reset_nerf_position();  // restart yaw position
+    // reset_nerf_position();  // restart yaw position
 }
 
 void blower_off() {
