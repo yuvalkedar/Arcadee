@@ -39,8 +39,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define MID_ROW_MOTOR_PIN (24)
 #define BTM_ROW_MOTOR_PIN (25)
 // INPUTS
-#define MOTOR_STEPS (300)
-#define RPM (100)
+#define MOTOR_STEPS (250)
+#define RPM (80)
 #define MICROSTEPS (1)
 #define STEPS (5)
 
@@ -75,7 +75,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define YAW_UPDATE_MS (80)
 #define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
-#define YAW_MAX (80)
+#define YAW_MAX (100)
 
 BasicStepperDriver stepper(MOTOR_STEPS, STEPPER_DIR_PIN, STEPPER_STEPS_PIN);
 
@@ -194,8 +194,8 @@ void yaw_update() {
         steps = 0;
     } else
         steps = 5;
-    // Serial.print("count: ");
-    // Serial.println(yaw_position);
+    Serial.print("count: ");
+    Serial.println(yaw_position);
 }
 
 void pitch_update() {
