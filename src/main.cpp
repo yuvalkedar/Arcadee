@@ -68,7 +68,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_14 (36)
 
 #define BLOWER_ON_MS (10000)
-#define RESET_GAME_MS (3000)
+#define RESET_GAME_MS (2000)
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
@@ -139,21 +139,21 @@ void winning_check(uint16_t mask) { //TODO: check why not always detecting winni
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
     } else {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
+        // digitalWrite(WINNING_SENSOR_PIN, LOW);
         if (!digitalRead(BTM_ROW_SENSOR_PIN)) digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
     }
     if ((mask & 0b00000111110000) == 0b00000111110000) {  // mid row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(MID_ROW_MOTOR_PIN, LOW);  // =turn on
     } else {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
+        // digitalWrite(WINNING_SENSOR_PIN, LOW);
         if (!digitalRead(MID_ROW_SENSOR_PIN)) digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
     }
     if ((mask & 0b00000000001111) == 0b00000000001111) {  // top row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(TOP_ROW_MOTOR_PIN, LOW);  // =turn on
     } else {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
+        // digitalWrite(WINNING_SENSOR_PIN, LOW);
         if (!digitalRead(TOP_ROW_SENSOR_PIN)) digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
     }
 }
@@ -179,6 +179,8 @@ void reset_cb() {
 
     yaw_position = YAW_MIN;
     // reset_nerf_position();  // restart yaw position
+
+    // digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
 void blower_off() {
