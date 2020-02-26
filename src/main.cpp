@@ -39,10 +39,10 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define MID_ROW_MOTOR_PIN (24)
 #define BTM_ROW_MOTOR_PIN (25)
 // INPUTS
-#define MOTOR_STEPS (250)
-#define RPM (80)
+#define MOTOR_STEPS (126)
+#define RPM (24)
 #define MICROSTEPS (1)
-#define STEPS (5)
+#define STEPS (10)
 
 #define YAW_BTN_PIN (32)     // Right pin in the RPi (GPIO18) (LEFT & RIGHT)
 #define PITCH_BTN_PIN (33)   // Front pin in the RPi (GPIO17) (UP & DOWN)
@@ -193,7 +193,7 @@ void yaw_update() {
     if (yaw_position <= YAW_MIN || yaw_position - 1 >= YAW_MAX) {
         steps = 0;
     } else
-        steps = 5;
+        steps = STEPS;
     Serial.print("count: ");
     Serial.println(yaw_position);
 }
