@@ -134,7 +134,7 @@ uint16_t get_clowns_state() {
 }
 */
 
-void winning_check(uint16_t mask) { //TODO: check why not always detecting winning
+void winning_check(uint16_t mask) {                       //TODO: check why not always detecting winning
     if ((mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
@@ -279,12 +279,16 @@ void loop() {
 #else
     if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
 
-    if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
+    // if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
 
-    if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) yaw_update_timer.start();
+    if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) {
+        digitalWrite(LIMIT_SWITCH_2_PIN, HIGH);
+        yaw_update_timer.start();
+    }
     if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
 
     if (!digitalRead(PITCH_BTN_PIN) && !pitch_update_timer.isRunning()) {
+        digitalWrite(LIMIT_SWITCH_1_PIN, HIGH);
         pitch_update_timer.start();
         digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
     }
