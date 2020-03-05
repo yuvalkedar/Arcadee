@@ -242,6 +242,11 @@ void setup() {
     pinMode(TOP_ROW_MOTOR_PIN, OUTPUT);
     pinMode(MID_ROW_MOTOR_PIN, OUTPUT);
     pinMode(BTM_ROW_MOTOR_PIN, OUTPUT);
+
+    digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
+    digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
+    digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
+
     pinMode(LAUNCHER_MOTOR_PIN, OUTPUT);
     pinMode(BLOWER_MOTOR_PIN, OUTPUT);
     pinMode(BELT_MOTOR_PIN, OUTPUT);
