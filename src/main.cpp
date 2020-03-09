@@ -25,14 +25,14 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 */
 
 // OUTPUTS
-#define PITCH_SERVO_PIN (5)
-#define STEPPER_STEPS_PIN (6)
-#define STEPPER_DIR_PIN (7)
+#define PITCH_SERVO_PIN (11)
+#define STEPPER_STEPS_PIN (9)
+#define STEPPER_DIR_PIN (10)
 #define BTM_LIMIT_SWITCH_PIN (8)
 #define LIMIT_SWITCH_2_PIN (16)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (17)  // limit switch f/b pin in the RPi (GPIO16)
 #define LAUNCHER_MOTOR_PIN (20)  // shooting motor
-#define BLOWER_MOTOR_PIN (19)    // loads balls into the magazine
+// #define BLOWER_MOTOR_PIN (19)    // loads balls into the magazine
 #define BELT_MOTOR_PIN (15)      // loads balls into the launcher
 #define WINNING_SENSOR_PIN (22)  // winning switch pin in the RPi (GPIO12)
 #define TOP_ROW_MOTOR_PIN (23)
@@ -67,8 +67,8 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_13 (37)
 #define CLOWN_14 (36)
 
-#define BLOWER_ON_MS (10000)
-#define RESET_GAME_MS (2000)
+// #define BLOWER_ON_MS (10000)
+#define RESET_GAME_MS (1000)
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
@@ -88,7 +88,7 @@ Button btm_sensor(BTM_ROW_SENSOR_PIN);
 Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
-Timer blower_timer;
+// Timer blower_timer;
 Servo pitch;
 
 uint8_t steps = STEPS;
@@ -134,7 +134,7 @@ uint16_t get_clowns_state() {
 }
 */
 
-void winning_check(uint16_t mask) {                       //TODO: check why not always detecting winning
+void winning_check(uint16_t mask) {
     if ((mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
@@ -183,9 +183,11 @@ void reset_cb() {
     // digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
+/*
 void blower_off() {
     digitalWrite(BLOWER_MOTOR_PIN, HIGH);
 }
+*/
 
 void yaw_update() {
     stepper.rotate(-steps);
@@ -216,8 +218,8 @@ void setup() {
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
 
-    blower_timer.setCallback(blower_off);
-    blower_timer.setTimeout(BLOWER_ON_MS);
+    // blower_timer.setCallback(blower_off);
+    // blower_timer.setTimeout(BLOWER_ON_MS);
 
     yaw_update_timer.setCallback(yaw_update);
     yaw_update_timer.setInterval(YAW_UPDATE_MS);
@@ -242,13 +244,8 @@ void setup() {
     pinMode(TOP_ROW_MOTOR_PIN, OUTPUT);
     pinMode(MID_ROW_MOTOR_PIN, OUTPUT);
     pinMode(BTM_ROW_MOTOR_PIN, OUTPUT);
-
-    digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
-    digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
-    digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
-
     pinMode(LAUNCHER_MOTOR_PIN, OUTPUT);
-    pinMode(BLOWER_MOTOR_PIN, OUTPUT);
+    // pinMode(BLOWER_MOTOR_PIN, OUTPUT);
     pinMode(BELT_MOTOR_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
@@ -256,7 +253,7 @@ void setup() {
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     reset_cb();
-    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
+    // digitalWrite(BLOWER_MOTOR_PIN, HIGH);
 
     Serial.println(F(
         "________________________________\n"
@@ -267,7 +264,7 @@ void setup() {
         "Made by KD Technology\n"
         "\n"));
 
-    reset_nerf_position();
+    // reset_nerf_position();
 }
 
 void loop() {
@@ -282,17 +279,22 @@ void loop() {
     Serial.println("\n");
     delay(500);
 #else
-    if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
+    if (start_btn.pressed()) {
+        // Serial.println("game starts");
+        game_start();  //based on 1000us of the coin pin
+    }
 
     // if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) {
+        // Serial.println("#1 btn is pressed");
         digitalWrite(LIMIT_SWITCH_2_PIN, HIGH);
         yaw_update_timer.start();
     }
     if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
 
     if (!digitalRead(PITCH_BTN_PIN) && !pitch_update_timer.isRunning()) {
+        // Serial.println("#2 btn is pressed");
         digitalWrite(LIMIT_SWITCH_1_PIN, HIGH);
         pitch_update_timer.start();
         digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
@@ -301,9 +303,9 @@ void loop() {
     if (pitch_btn.released() && pitch_update_timer.isRunning()) {
         pitch_update_timer.stop();
         digitalWrite(BELT_MOTOR_PIN, LOW);
-        digitalWrite(BLOWER_MOTOR_PIN, LOW);
+        // digitalWrite(BLOWER_MOTOR_PIN, LOW);
         reset_timer.start();
-        blower_timer.start();
+        // blower_timer.start();
     }
 
     winning_check(get_clowns_state());
