@@ -32,7 +32,7 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define LIMIT_SWITCH_2_PIN (16)  // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (17)  // limit switch f/b pin in the RPi (GPIO16)
 #define LAUNCHER_MOTOR_PIN (20)  // shooting motor
-// #define BLOWER_MOTOR_PIN (19)    // loads balls into the magazine
+#define BLOWER_MOTOR_PIN (19)    // loads balls into the magazine
 #define BELT_MOTOR_PIN (15)      // loads balls into the launcher
 #define WINNING_SENSOR_PIN (22)  // winning switch pin in the RPi (GPIO12)
 #define TOP_ROW_MOTOR_PIN (23)
@@ -67,8 +67,9 @@ LAUNCHER_MOTOR_PIN, BELT_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_13 (37)
 #define CLOWN_14 (36)
 
-// #define BLOWER_ON_MS (10000)
-#define RESET_GAME_MS (1000)
+#define RESET_SHOOTING_MS (BLOWER_ON_MS + 1000)
+#define BLOWER_ON_MS (3000)
+#define RESET_GAME_MS (2000)
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
@@ -88,7 +89,8 @@ Button btm_sensor(BTM_ROW_SENSOR_PIN);
 Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
-// Timer blower_timer;
+Timer blower_timer;
+Timer shooting_timer;  //allows the shooting motor work a bit more after the loader stops in order to make sure balls won't get stuck in.
 Servo pitch;
 
 uint8_t steps = STEPS;
@@ -171,7 +173,7 @@ void game_start() {  // resets all parameters
 
 void reset_cb() {
     limit_switches(0);
-    digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
+    // digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
     digitalWrite(BELT_MOTOR_PIN, HIGH);
 
     pitch_position = PITCH_RESTART_POSITION;
@@ -183,11 +185,13 @@ void reset_cb() {
     // digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
-/*
+void shooting_reset_cb() {
+    digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
+}
+
 void blower_off() {
     digitalWrite(BLOWER_MOTOR_PIN, HIGH);
 }
-*/
 
 void yaw_update() {
     stepper.rotate(-steps);
@@ -218,8 +222,11 @@ void setup() {
     reset_timer.setCallback(reset_cb);
     reset_timer.setTimeout(RESET_GAME_MS);
 
-    // blower_timer.setCallback(blower_off);
-    // blower_timer.setTimeout(BLOWER_ON_MS);
+    blower_timer.setCallback(blower_off);
+    blower_timer.setTimeout(BLOWER_ON_MS);
+
+    shooting_timer.setCallback(shooting_reset_cb);
+    shooting_timer.setTimeout(RESET_SHOOTING_MS);
 
     yaw_update_timer.setCallback(yaw_update);
     yaw_update_timer.setInterval(YAW_UPDATE_MS);
@@ -245,7 +252,7 @@ void setup() {
     pinMode(MID_ROW_MOTOR_PIN, OUTPUT);
     pinMode(BTM_ROW_MOTOR_PIN, OUTPUT);
     pinMode(LAUNCHER_MOTOR_PIN, OUTPUT);
-    // pinMode(BLOWER_MOTOR_PIN, OUTPUT);
+    pinMode(BLOWER_MOTOR_PIN, OUTPUT);
     pinMode(BELT_MOTOR_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
@@ -253,7 +260,8 @@ void setup() {
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     reset_cb();
-    // digitalWrite(BLOWER_MOTOR_PIN, HIGH);
+    digitalWrite(BLOWER_MOTOR_PIN, HIGH);
+    digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
 
     Serial.println(F(
         "________________________________\n"
@@ -303,9 +311,10 @@ void loop() {
     if (pitch_btn.released() && pitch_update_timer.isRunning()) {
         pitch_update_timer.stop();
         digitalWrite(BELT_MOTOR_PIN, LOW);
-        // digitalWrite(BLOWER_MOTOR_PIN, LOW);
+        digitalWrite(BLOWER_MOTOR_PIN, LOW);
         reset_timer.start();
-        // blower_timer.start();
+        shooting_timer.start();
+        blower_timer.start();
     }
 
     winning_check(get_clowns_state());
