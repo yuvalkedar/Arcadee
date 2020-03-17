@@ -92,7 +92,7 @@ Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
 Timer blower_timer;
-Timer belt_reverse_timer;
+// Timer belt_reverse_timer;
 Timer shooting_timer;  //allows the shooting motor work a bit more after the loader stops in order to make sure balls won't get stuck in.
 Servo pitch;
 
@@ -139,6 +139,21 @@ uint16_t get_clowns_state() {
 }
 */
 
+void move_belt_fw() {
+    digitalWrite(BELT_MOTOR_SPEED_PIN, HIGH);
+    digitalWrite(BELT_MOTOR_DIR_PIN, LOW);
+}
+
+void stop_belt() {
+    digitalWrite(BELT_MOTOR_SPEED_PIN, HIGH);
+    digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
+}
+
+void move_belt_bw(uint8_t speed) {
+    digitalWrite(BELT_MOTOR_SPEED_PIN, LOW);
+    digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
+}
+
 void winning_check(uint16_t mask) {
     if ((mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
@@ -177,7 +192,8 @@ void game_start() {  // resets all parameters
 void reset_cb() {
     limit_switches(0);
     // digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
-    move_belt_bw(255);
+    stop_belt();
+    // move_belt_fw(255);
 
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
@@ -212,20 +228,6 @@ void pitch_update() {
     pitch.write(pitch_position);
 }
 
-void move_belt_fw(uint8_t speed) {
-    analogWrite(BELT_MOTOR_SPEED_PIN, speed);
-    digitalWrite(BELT_MOTOR_DIR_PIN, LOW);
-}
-
-void stop_belt() {
-    analogWrite(BELT_MOTOR_SPEED_PIN, HIGH);
-    digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
-}
-
-void move_belt_bw(uint8_t speed) {
-    analogWrite(BELT_MOTOR_SPEED_PIN, speed);
-    digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
-}
 
 void setup() {
     Serial.begin(115200);
@@ -243,8 +245,8 @@ void setup() {
     blower_timer.setCallback(blower_off);
     blower_timer.setTimeout(BLOWER_ON_MS);
 
-    belt_reverse_timer.setCallback(stop_belt);
-    belt_reverse_timer.setTimeout(BELT_ON_MS);
+    // belt_reverse_timer.setCallback(stop_belt);
+    // belt_reverse_timer.setTimeout(BELT_ON_MS + RESET_GAME_MS);
 
     shooting_timer.setCallback(shooting_reset_cb);
     shooting_timer.setTimeout(RESET_SHOOTING_MS);
@@ -279,13 +281,16 @@ void setup() {
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
-
-    digitalWrite(BELT_MOTOR_DIR_PIN ,LOW);
-    digitalWrite(BELT_MOTOR_SPEED_PIN ,LOW);
+    
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    reset_cb();
     digitalWrite(BLOWER_MOTOR_PIN, HIGH);
     digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
+    // reset_cb();
+    limit_switches(0);
+    // yaw_position = YAW_MIN;
+    // digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
+    // digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
+    // digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
 
     Serial.println(F(
         "________________________________\n"
@@ -334,12 +339,12 @@ void loop() {
 
     if (pitch_btn.released() && pitch_update_timer.isRunning()) {
         pitch_update_timer.stop();
-        move_belt_fw(255);
+        move_belt_bw(255);
         digitalWrite(BLOWER_MOTOR_PIN, LOW);
+        // belt_reverse_timer.start();
         reset_timer.start();
         shooting_timer.start();
         blower_timer.start();
-        belt_reverse_timer.start();
     }
 
     winning_check(get_clowns_state());
