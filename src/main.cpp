@@ -9,7 +9,7 @@
 	Arduino Nano communicates with RPi.
 	RPi sends button press commands (via app) to the Arduino, who sends commands to the machine.
     
-    Working version - without sweeping the aiming position.
+    SOCCER MACHINE
 */
 
 #include <Adafruit_NeoPixel.h>
