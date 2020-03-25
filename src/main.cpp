@@ -15,8 +15,6 @@
 #include <timerManager.h>
 #include "BasicStepperDriver.h"
 
-
-//test
 // #define DEBUG
 
 /*
@@ -72,7 +70,7 @@ LAUNCHER_MOTOR_PIN, BLOWER_MOTOR_PIN
 
 #define RESET_GAME_MS (1000)
 #define BLOWER_ON_MS (10000)
-#define RESET_SHOOTING_MS (RESET_GAME_MS + 500)
+#define RESET_SHOOTING_MS (RESET_GAME_MS + 1200)
 #define BELT_ON_MS (300 + RESET_GAME_MS)
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
@@ -80,7 +78,7 @@ LAUNCHER_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define YAW_UPDATE_MS (80)
 #define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
-#define YAW_MAX (70)
+#define YAW_MAX (90)
 
 BasicStepperDriver stepper(MOTOR_STEPS, STEPPER_DIR_PIN, STEPPER_STEPS_PIN);
 
@@ -286,13 +284,9 @@ void setup() {
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     digitalWrite(BLOWER_MOTOR_PIN, HIGH);
     digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
-    // reset_cb();
     limit_switches(0);
-    // yaw_position = YAW_MIN;
-    // digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
-    // digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
-    // digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
-
+    stop_belt();
+    
     Serial.println(F(
         "________________________________\n"
         "\n"
