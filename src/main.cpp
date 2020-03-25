@@ -68,10 +68,10 @@ LAUNCHER_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define CLOWN_13 (37)
 #define CLOWN_14 (36)
 
-#define RESET_SHOOTING_MS (BLOWER_ON_MS + 1000)
-#define BLOWER_ON_MS (3000)
-#define BELT_ON_MS (3000)
-#define RESET_GAME_MS (1800)
+#define RESET_GAME_MS (1000)
+#define BLOWER_ON_MS (10000)
+#define RESET_SHOOTING_MS (RESET_GAME_MS + 500)
+#define BELT_ON_MS (300 + RESET_GAME_MS)
 #define PITCH_UPDATE_MS (20)
 #define PITCH_MIN (0)
 #define PITCH_MAX (180)
@@ -92,7 +92,7 @@ Timer reset_timer;
 Timer yaw_update_timer;
 Timer pitch_update_timer;
 Timer blower_timer;
-// Timer belt_reverse_timer;
+Timer belt_reverse_timer;
 Timer shooting_timer;  //allows the shooting motor work a bit more after the loader stops in order to make sure balls won't get stuck in.
 Servo pitch;
 
@@ -149,7 +149,7 @@ void stop_belt() {
     digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
 }
 
-void move_belt_bw(uint8_t speed) {
+void move_belt_bw() {
     digitalWrite(BELT_MOTOR_SPEED_PIN, LOW);
     digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
 }
@@ -192,8 +192,7 @@ void game_start() {  // resets all parameters
 void reset_cb() {
     limit_switches(0);
     // digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
-    stop_belt();
-    // move_belt_fw(255);
+    move_belt_fw();
 
     pitch_position = PITCH_RESTART_POSITION;
     pitch.write(pitch_position);  // restart pitch position
@@ -245,8 +244,8 @@ void setup() {
     blower_timer.setCallback(blower_off);
     blower_timer.setTimeout(BLOWER_ON_MS);
 
-    // belt_reverse_timer.setCallback(stop_belt);
-    // belt_reverse_timer.setTimeout(BELT_ON_MS + RESET_GAME_MS);
+    belt_reverse_timer.setCallback(stop_belt);
+    belt_reverse_timer.setTimeout(BELT_ON_MS);
 
     shooting_timer.setCallback(shooting_reset_cb);
     shooting_timer.setTimeout(RESET_SHOOTING_MS);
@@ -339,9 +338,9 @@ void loop() {
 
     if (pitch_btn.released() && pitch_update_timer.isRunning()) {
         pitch_update_timer.stop();
-        move_belt_bw(255);
+        move_belt_bw();
         digitalWrite(BLOWER_MOTOR_PIN, LOW);
-        // belt_reverse_timer.start();
+        belt_reverse_timer.start();
         reset_timer.start();
         shooting_timer.start();
         blower_timer.start();
