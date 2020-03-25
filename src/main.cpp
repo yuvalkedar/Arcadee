@@ -75,18 +75,18 @@ void reset_stepper_position(uint8_t _dir_pin, uint8_t _step_pin, uint8_t _limit_
 
 void game_start() {  // resets all parameters
     limit_switches(0);
+    /*
     yaw_position = YAW_STEPPER_MIN;
     reset_stepper_position(YAW_DIR_PIN, YAW_STEP_PIN, SOLENOID_LIMIT_SWITCH_PIN);  // restart yaw position
     guard_update_timer.start();
+    */
 }
 
 void reset_cb() {
     limit_switches(0);
-    // digitalWrite(LAUNCHER_MOTOR_PIN, HIGH);
-    yaw_position = YAW_STEPPER_MIN;
-    // reset_nerf_position();  // restart yaw position
-    guard_update_timer.stop();
-    reset_stepper_position(GUARD_DIR_PIN, GUARD_STEP_PIN, GUARD_LIMIT_SWITCH_PIN);  // restart guard position
+    // yaw_position = YAW_STEPPER_MIN;
+    // guard_update_timer.stop();
+    // reset_stepper_position(GUARD_DIR_PIN, GUARD_STEP_PIN, GUARD_LIMIT_SWITCH_PIN);  // restart guard position
 }
 
 void guard_movement() {
@@ -177,20 +177,12 @@ void loop() {
         game_start();  //based on 1000us of the coin pin
     }
 
-    if (yaw_btn.pressed()) {
-        Serial.println("#1 btn is pressed");
-    }
-
-    if (shooting_btn.pressed()) {
-        Serial.println("#2 btn is pressed");
-    }
-
     if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) {
         Serial.println("#1 btn is pressed");
         digitalWrite(LIMIT_SWITCH_2_PIN, HIGH);
-        yaw_update_timer.start();
+        // yaw_update_timer.start();
     }
-    if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
+    // if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
 
     if (!digitalRead(SHOOTING_BTN_PIN)) {
         Serial.println("#2 btn is pressed");
@@ -201,6 +193,5 @@ void loop() {
         // toggle_solenoid();
         reset_timer.start();
     }
-
-    TimerManager::instance().update();
+    // TimerManager::instance().update();
 }
