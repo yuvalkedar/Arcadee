@@ -79,6 +79,7 @@ LAUNCHER_MOTOR_PIN, BLOWER_MOTOR_PIN
 #define PITCH_RESTART_POSITION (180)
 #define YAW_MIN (0)
 #define YAW_MAX (90)
+#define DEBOUNCE_DELAY_MS  (2000)
 
 BasicStepperDriver stepper(MOTOR_STEPS, STEPPER_DIR_PIN, STEPPER_STEPS_PIN);
 
@@ -99,6 +100,9 @@ Servo pitch;
 uint8_t steps = STEPS;
 volatile int yaw_position;
 volatile uint8_t pitch_position;
+
+unsigned long last_debounce_time = 0;  // the last time the output pin was toggled
+bool winning_state = false;
 
 // uint16_t clowns_mask = 0x0000;
 uint8_t clowns_pins[] = {CLOWN_1, CLOWN_2, CLOWN_3, CLOWN_4, CLOWN_5, CLOWN_6, CLOWN_7, CLOWN_8, CLOWN_9, CLOWN_10, CLOWN_11, CLOWN_12, CLOWN_13, CLOWN_14};
@@ -154,6 +158,41 @@ void move_belt_bw() {
     digitalWrite(BELT_MOTOR_DIR_PIN, HIGH);
 }
 
+
+void winning_check(uint16_t mask) {
+    if (((mask & 0b11111000000000) == 0b11111000000000 || (mask & 0b00000111110000) == 0b00000111110000 || (mask & 0b00000000001111) == 0b00000000001111) && (winning_state == false)) {
+        Serial.println("Win detected");
+        winning_state = true;
+        last_debounce_time = millis();
+        Serial.println(last_debounce_time);
+    }
+    if ((millis() - last_debounce_time) >= DEBOUNCE_DELAY_MS && (mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
+        Serial.println("btm row win confirmed");
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        digitalWrite(BTM_ROW_MOTOR_PIN, LOW);  // =turn on
+    } else {
+        // Serial.println(".");
+        // digitalWrite(WINNING_SENSOR_PIN, LOW);
+        if (!digitalRead(BTM_ROW_SENSOR_PIN)) digitalWrite(BTM_ROW_MOTOR_PIN, HIGH);
+    }
+    if ((millis() - last_debounce_time) >= DEBOUNCE_DELAY_MS && (mask & 0b00000111110000) == 0b00000111110000) {  // mid row winning sequence
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        digitalWrite(MID_ROW_MOTOR_PIN, LOW);  // =turn on
+    } else {
+        // digitalWrite(WINNING_SENSOR_PIN, LOW);
+        if (!digitalRead(MID_ROW_SENSOR_PIN)) digitalWrite(MID_ROW_MOTOR_PIN, HIGH);
+    }
+    if ((millis() - last_debounce_time) >= DEBOUNCE_DELAY_MS && (mask & 0b00000000001111) == 0b00000000001111) {  // top row winning sequence
+        digitalWrite(WINNING_SENSOR_PIN, HIGH);
+        digitalWrite(TOP_ROW_MOTOR_PIN, LOW);  // =turn on
+    } else {
+        // digitalWrite(WINNING_SENSOR_PIN, LOW);
+        if (!digitalRead(TOP_ROW_SENSOR_PIN)) digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
+    }
+}
+
+
+/*
 void winning_check(uint16_t mask) {
     if ((mask & 0b11111000000000) == 0b11111000000000) {  // btm row winning sequence
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
@@ -177,6 +216,7 @@ void winning_check(uint16_t mask) {
         if (!digitalRead(TOP_ROW_SENSOR_PIN)) digitalWrite(TOP_ROW_MOTOR_PIN, HIGH);
     }
 }
+*/
 
 void game_start() {  // resets all parameters
     digitalWrite(WINNING_SENSOR_PIN, LOW);
@@ -187,6 +227,7 @@ void game_start() {  // resets all parameters
 
     yaw_position = YAW_MIN;
     reset_nerf_position();  // restart yaw position
+    winning_state = false;
 }
 
 void reset_cb() {
@@ -198,6 +239,7 @@ void reset_cb() {
     pitch.write(pitch_position);  // restart pitch position
 
     yaw_position = YAW_MIN;
+    winning_state = false;
     // reset_nerf_position();  // restart yaw position
 
     // digitalWrite(WINNING_SENSOR_PIN, LOW);
@@ -218,8 +260,8 @@ void yaw_update() {
         steps = 0;
     } else
         steps = STEPS;
-    Serial.print("count: ");
-    Serial.println(yaw_position);
+    // Serial.print("count: ");
+    // Serial.println(yaw_position);
 }
 
 void pitch_update() {
