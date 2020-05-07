@@ -1,15 +1,12 @@
 /*
-	Author: Yuval Kedar - KD Technology
-	Instagram: https://www.instagram.com/kd_technology/
-	Date: Jul 19
-	Dev board: Arduino Nano
-	
-	Canon ball controller for Gigantic - Clawee.
+    Automatic Basketball Machine
+
+	Copyright (C) 2020 Yuval Kedar - KD Tech
+    https://www.instagram.com/kd_technology/
+	board: Arduino Nano
 	
 	Arduino Nano communicates with RPi.
 	RPi sends button press commands (via app) to the Arduino, who sends commands to the machine.
-    
-    Working version - without sweeping the aiming position.
 */
 
 #include <Adafruit_NeoPixel.h>
@@ -18,13 +15,14 @@
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
 
-#define LAUNCHER_BTN_PIN (4)  // Right pin in the RPi (GPIO18)
-#define LAUNCHER_PIN (3)
 #define AIMING_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
+#define LAUNCHER_BTN_PIN (4)  // Right pin in the RPi (GPIO18)
 #define AIMING_SERVO_PIN (5)
 #define MAGAZINE_SERVO_PIN (6)
 #define WINNING_SENSOR_PIN (7)    // winning switch pin in the RPi (GPIO12)
 #define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
+#define BLDC_1_PIN (9)
+#define BLDC_2_PIN (10)
 #define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (13)   // limit switch f/b pin in the RPi (GPIO16)
 #define LED_BAR_PIN (A0)          // D14
@@ -60,7 +58,8 @@ Timer strength_timer;  //updates the canon's strength and led_bar
 Timer aiming_timer;    //updates the canon's position
 
 Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
-Servo ESC;
+Servo ESC_1;
+Servo ESC_2;
 Servo magazine;
 Servo aiming;
 
@@ -76,13 +75,7 @@ void limit_switches(bool state) {
 }
 
 void winning_check() {
-    if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) {
-        digitalWrite(WINNING_SENSOR_PIN, HIGH);
-        // Serial.println(F("Congrats son, you might be the next Kobe Bryant!"));
-    } else {
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
-        // Serial.println(F("FUCKKK"));
-    }
+    (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) ? digitalWrite(WINNING_SENSOR_PIN, HIGH) : digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
 void game_start() {  // resets all parameters
@@ -90,16 +83,19 @@ void game_start() {  // resets all parameters
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
     magazine.write(MAGAZINE_RESTART_POSITION);
-    ESC.write(CANON_MIN);
+    ESC_1.write(CANON_MIN);
+    ESC_2.write(CANON_MIN);
     led_bar = 0;
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
 void reset_cb() {
+    limit_switches(0);
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
     magazine.write(MAGAZINE_RESTART_POSITION);
-    ESC.write(CANON_MIN);
+    ESC_1.write(CANON_MIN);
+    ESC_2.write(CANON_MIN);
     led_bar = 0;
     strength_bar.clear();
     strength_bar.show();
@@ -129,10 +125,13 @@ bool check_ball_loaded() {
 }
 
 void canon_begin() {
-    ESC.attach(LAUNCHER_PIN, 1000, 2000);
-    ESC.write(CANON_MAX);
+    ESC_1.attach(BLDC_1_PIN, 1000, 2000);
+    ESC_2.attach(BLDC_2_PIN, 1000, 2000);
+    ESC_1.write(CANON_MAX);
+    ESC_2.write(CANON_MAX);
     delay(CALIBRATION_MS);
-    ESC.write(CANON_MIN);
+    ESC_1.write(CANON_MIN);
+    ESC_2.write(CANON_MIN);
     delay(CALIBRATION_MS);
 }
 
@@ -144,7 +143,8 @@ void canon_update() {
         led_bar = NUM_PIXELS - 1;
     }
 
-    ESC.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
+    ESC_1.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
+    ESC_2.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
 }
 
 /*
@@ -187,8 +187,8 @@ void setup() {
     aiming_timer.setCallback(aiming_update);
     aiming_timer.setInterval(AIMING_UPDATE_MS);
 
-    pinMode(LAUNCHER_BTN_PIN, INPUT);
-    pinMode(AIMING_BTN_PIN, INPUT);
+    pinMode(LAUNCHER_BTN_PIN, INPUT_PULLUP);
+    pinMode(AIMING_BTN_PIN, INPUT_PULLUP);
     pinMode(START_GAME_PIN, INPUT);
     pinMode(BASKET_SENSOR_PIN, INPUT);
     pinMode(MAGAZINE_SENSOR_PIN, INPUT);
@@ -214,12 +214,21 @@ void loop() {
     if (check_ball_loaded()) {
         if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
     }
-    if (aiming_btn.pressed() || launcher_btn.pressed()) limit_switches(1);
 
-    if (!digitalRead(AIMING_BTN_PIN) && !aiming_timer.isRunning()) aiming_timer.start();
+    if (!digitalRead(AIMING_BTN_PIN) && !aiming_timer.isRunning()) {
+        Serial.println("#1 btn is pressed");
+        digitalWrite(LIMIT_SWITCH_2_PIN, HIGH);
+        aiming_timer.start();
+    }
+
     if (aiming_btn.released() && aiming_timer.isRunning()) aiming_timer.stop();
 
-    if (!digitalRead(LAUNCHER_BTN_PIN) && !strength_timer.isRunning()) strength_timer.start();
+    if (!digitalRead(LAUNCHER_BTN_PIN) && !strength_timer.isRunning()) {
+        Serial.println("#2 btn is pressed");
+        digitalWrite(LIMIT_SWITCH_1_PIN, HIGH);
+        strength_timer.start();
+    }
+
     if (launcher_btn.released() && strength_timer.isRunning()) {
         launcher_timer.start();
         strength_timer.stop();
