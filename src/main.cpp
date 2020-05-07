@@ -354,21 +354,21 @@ void loop() {
     delay(500);
 #else
     if (start_btn.pressed()) {
-        // Serial.println("game starts");
+        Serial.println("game starts");
         game_start();  //based on 1000us of the coin pin
     }
 
     // if (yaw_btn.pressed() || pitch_btn.pressed()) limit_switches(1);
 
     if (!digitalRead(YAW_BTN_PIN) && !yaw_update_timer.isRunning()) {
-        // Serial.println("#1 btn is pressed");
+        Serial.println("#1 btn is pressed");
         digitalWrite(LIMIT_SWITCH_2_PIN, HIGH);
         yaw_update_timer.start();
     }
     if (yaw_btn.released() && yaw_update_timer.isRunning()) yaw_update_timer.stop();
 
     if (!digitalRead(PITCH_BTN_PIN) && !pitch_update_timer.isRunning()) {
-        // Serial.println("#2 btn is pressed");
+        Serial.println("#2 btn is pressed");
         digitalWrite(LIMIT_SWITCH_1_PIN, HIGH);
         pitch_update_timer.start();
         digitalWrite(LAUNCHER_MOTOR_PIN, LOW);
