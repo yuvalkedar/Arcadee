@@ -16,13 +16,12 @@
 #include <timerManager.h>
 
 #define AIMING_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
+#define ESC_PIN (3)
 #define LAUNCHER_BTN_PIN (4)  // Right pin in the RPi (GPIO18)
 #define AIMING_SERVO_PIN (5)
 #define MAGAZINE_SERVO_PIN (6)
 #define WINNING_SENSOR_PIN (7)    // winning switch pin in the RPi (GPIO12)
 #define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
-#define BLDC_1_PIN (9)
-#define BLDC_2_PIN (10)
 #define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (13)   // limit switch f/b pin in the RPi (GPIO16)
 #define LED_BAR_PIN (A0)          // D14
@@ -32,15 +31,16 @@
 
 #define NUM_PIXELS (8)
 #define GAME_TIME (20000)  // in milliseconds
-#define BASKET_SENSOR_LIMIT (500)
-#define MAGAZINE_SENSOR_LIMIT (350)
+#define BASKET_SENSOR_LIMIT (800)
+#define MAGAZINE_SENSOR_LIMIT (850)
 #define LAUNCHER_DELAY_MS (500)
 #define RESET_DELAY_MS (1500)
 #define LED_BAR_BRIGHTNESS (250)
 #define CANON_MIN (0)
 #define CANON_MAX (180)
+#define STRENGTH_MIN (18)
+#define STRENGTH_MAX (28)
 #define CALIBRATION_MS (1000)
-#define CANON_STRENGTH (49)
 #define LED_BAR_UPDATE_MS (300)
 #define AIMING_UPDATE_MS (40)
 #define AIMING_SERVO_MIN (20)
@@ -58,8 +58,7 @@ Timer strength_timer;  //updates the canon's strength and led_bar
 Timer aiming_timer;    //updates the canon's position
 
 Adafruit_NeoPixel strength_bar(NUM_PIXELS, LED_BAR_PIN, NEO_GRB + NEO_KHZ800);
-Servo ESC_1;
-Servo ESC_2;
+Servo ESC;
 Servo magazine;
 Servo aiming;
 
@@ -75,7 +74,8 @@ void limit_switches(bool state) {
 }
 
 void winning_check() {
-    (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) ? digitalWrite(WINNING_SENSOR_PIN, HIGH) : digitalWrite(WINNING_SENSOR_PIN, LOW);
+    //WARNNING: might make problems. In a case, add a timeout for winning pin on high and an else statement to go low.
+    if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) digitalWrite(WINNING_SENSOR_PIN, HIGH);
 }
 
 void game_start() {  // resets all parameters
@@ -83,8 +83,7 @@ void game_start() {  // resets all parameters
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
     magazine.write(MAGAZINE_RESTART_POSITION);
-    ESC_1.write(CANON_MIN);
-    ESC_2.write(CANON_MIN);
+    ESC.write(CANON_MIN);
     led_bar = 0;
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
@@ -94,8 +93,7 @@ void reset_cb() {
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
     magazine.write(MAGAZINE_RESTART_POSITION);
-    ESC_1.write(CANON_MIN);
-    ESC_2.write(CANON_MIN);
+    ESC.write(CANON_MIN);
     led_bar = 0;
     strength_bar.clear();
     strength_bar.show();
@@ -125,13 +123,10 @@ bool check_ball_loaded() {
 }
 
 void canon_begin() {
-    ESC_1.attach(BLDC_1_PIN, 1000, 2000);
-    ESC_2.attach(BLDC_2_PIN, 1000, 2000);
-    ESC_1.write(CANON_MAX);
-    ESC_2.write(CANON_MAX);
+    ESC.attach(ESC_PIN, 1000, 2000);
+    ESC.write(CANON_MAX);
     delay(CALIBRATION_MS);
-    ESC_1.write(CANON_MIN);
-    ESC_2.write(CANON_MIN);
+    ESC.write(CANON_MIN);
     delay(CALIBRATION_MS);
 }
 
@@ -143,8 +138,9 @@ void canon_update() {
         led_bar = NUM_PIXELS - 1;
     }
 
-    ESC_1.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
-    ESC_2.write((led_bar <= 5) ? CANON_STRENGTH : CANON_STRENGTH + 1);
+    uint8_t strength = map(led_bar, 0, NUM_PIXELS - 1, STRENGTH_MIN, STRENGTH_MAX);
+    ESC.write(strength);
+    // Serial.println(strength);
 }
 
 /*
@@ -158,7 +154,7 @@ void aiming_update() {  // WITH SWEEP
     position -= increment;
     aiming.write(position);
     if (position <= AIMING_SERVO_MIN || position - 1 >= AIMING_SERVO_MAX) increment = -increment;
-    Serial.println(position);
+    // Serial.println(position);
 }
 
 void setup() {
@@ -201,10 +197,10 @@ void setup() {
     limit_switches(0);
 
     Serial.println(F(
-        "_______________________________\n"
+        "_________________________\n"
         "\n"
-        "   B a l l   L a u n c h e r   \n"
-        "_______________________________\n"
+        "   B a s k e t b a l l   \n"
+        "_________________________\n"
         "\n"
         "Made by KD Technology\n"
         "\n"));
