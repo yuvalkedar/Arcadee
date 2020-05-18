@@ -32,7 +32,7 @@
 #define NUM_PIXELS (8)
 #define GAME_TIME (20000)  // in milliseconds
 #define BASKET_SENSOR_LIMIT (800)
-#define MAGAZINE_SENSOR_LIMIT (850)
+#define MAGAZINE_SENSOR_LIMIT (650)
 #define LAUNCHER_DELAY_MS (500)
 #define RESET_DELAY_MS (1500)
 #define LED_BAR_BRIGHTNESS (250)
@@ -44,7 +44,7 @@
 #define LED_BAR_UPDATE_MS (300)
 #define AIMING_UPDATE_MS (40)
 #define AIMING_SERVO_MIN (20)
-#define AIMING_SERVO_MAX (145)
+#define AIMING_SERVO_MAX (165)
 #define MAGAZINE_LOADING_POSITION (90)
 #define MAGAZINE_RESTART_POSITION (180)
 
@@ -74,7 +74,7 @@ void limit_switches(bool state) {
 }
 
 void winning_check() {
-    //WARNNING: might make problems. In a case, add a timeout for winning pin on high and an else statement to go low.
+    //WARNNING: might make problems on Shift's Monitor. In that case, add a timeout for winning pin on high and an else statement to go low.
     if (analogRead(BASKET_SENSOR_PIN) > BASKET_SENSOR_LIMIT) digitalWrite(WINNING_SENSOR_PIN, HIGH);
 }
 
