@@ -207,9 +207,9 @@ void setup() {
 }
 
 void loop() {
-    if (check_ball_loaded()) {
+    // if (check_ball_loaded()) {   //TODO: fix this function. It makes the home sensors gpios permanent and monitor closes the machine.
         if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
-    }
+    // }
 
     if (!digitalRead(AIMING_BTN_PIN) && !aiming_timer.isRunning()) {
         Serial.println("#1 btn is pressed");
