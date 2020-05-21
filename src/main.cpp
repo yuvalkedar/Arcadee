@@ -39,7 +39,7 @@
 #define CANON_MIN (0)
 #define CANON_MAX (180)
 #define STRENGTH_MIN (18)
-#define STRENGTH_MAX (28)
+#define STRENGTH_MAX (21)
 #define CALIBRATION_MS (1000)
 #define LED_BAR_UPDATE_MS (300)
 #define AIMING_UPDATE_MS (40)
