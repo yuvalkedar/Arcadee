@@ -57,10 +57,6 @@ bool ls_state = 0;
 int8_t score = 0;
 uint8_t last_score = 0;
 int increment_steps = 1;
-uint16_t ldr_1_current_read;
-uint16_t ldr_2_current_read;
-uint16_t ldr_3_current_read;
-uint16_t ldr_4_current_read;
 
 void delay_millis(uint32_t ms) {
     uint32_t start_ms = millis();
@@ -136,10 +132,10 @@ void winning_check() {
 }
 
 void update_score() {
-    ldr_1_current_read = analogRead(LDR_1_PIN);
-    ldr_2_current_read = analogRead(LDR_2_PIN);
-    ldr_3_current_read = analogRead(LDR_3_PIN);
-    ldr_4_current_read = analogRead(LDR_4_PIN);
+    uint16_t ldr_1_current_read = analogRead(LDR_1_PIN);
+    uint16_t ldr_2_current_read = analogRead(LDR_2_PIN);
+    uint16_t ldr_3_current_read = analogRead(LDR_3_PIN);
+    uint16_t ldr_4_current_read = analogRead(LDR_4_PIN);
 
     if ((ldr_1_current_read > LDR_1_LIMIT) || (ldr_3_current_read > LDR_3_LIMIT)) {
         score++;
@@ -153,6 +149,7 @@ void update_score() {
         if (score <= 0) {
             score = 0;
         }
+        delay_millis(2000);
     }
 
 #ifdef DEBUG
