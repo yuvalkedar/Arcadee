@@ -22,11 +22,15 @@
 #define MAGAZINE_SERVO_PIN (6)
 #define WINNING_SENSOR_PIN (7)    // winning switch pin in the RPi (GPIO12)
 #define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
+#define BASKET_MOTOR_A_PIN  (9)
+#define BASKET_MOTOR_B_PIN  (10)
 #define LIMIT_SWITCH_2_PIN (12)   // limit switch r/l pin in the RPi (GPIO20)
 #define LIMIT_SWITCH_1_PIN (13)   // limit switch f/b pin in the RPi (GPIO16)
 #define LED_BAR_PIN (A0)          // D14
 #define MAGAZINE_SENSOR_PIN (A1)  // D15
 #define BASKET_SENSOR_PIN (A2)    // D16
+#define BASKET_R_LIMIT_PIN (A3)
+#define BASKET_L_LIMIT_PIN (A4)
 #define MAGAZINE_BLOWER_PIN (A5)  // D19 = air blower
 
 #define NUM_PIXELS (8)
@@ -67,6 +71,19 @@ volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0x
 
 volatile uint8_t position;
 int increment = 1;
+bool basket_dir = 0;
+
+void basket_movement(bool A, bool B) {
+    digitalWrite(BASKET_MOTOR_A_PIN, A);
+    digitalWrite(BASKET_MOTOR_B_PIN, B);
+}
+
+void basket_movement_update() {
+    if (digitalRead(BASKET_L_LIMIT_PIN) && !digitalRead(BASKET_R_LIMIT_PIN)) basket_dir = 0;
+    if (!digitalRead(BASKET_L_LIMIT_PIN) && digitalRead(BASKET_R_LIMIT_PIN)) basket_dir = 1;
+    // if (!digitalRead(BASKET_L_LIMIT_PIN) || !digitalRead(BASKET_R_LIMIT_PIN)) basket_dir = !basket_dir;
+    (basket_dir) ? basket_movement(1, 0) : basket_movement(0, 1);
+}
 
 void limit_switches(bool state) {
     digitalWrite(LIMIT_SWITCH_1_PIN, state);
@@ -86,6 +103,7 @@ void game_start() {  // resets all parameters
     ESC.write(CANON_MIN);
     led_bar = 0;
     digitalWrite(WINNING_SENSOR_PIN, LOW);
+    // basket_movement_update();
 }
 
 void reset_cb() {
@@ -97,6 +115,7 @@ void reset_cb() {
     led_bar = 0;
     strength_bar.clear();
     strength_bar.show();
+    // basket_movement(0, 0);
 }
 
 void launcher_cb() {  // when launcher button released
@@ -185,12 +204,18 @@ void setup() {
 
     pinMode(LAUNCHER_BTN_PIN, INPUT_PULLUP);
     pinMode(AIMING_BTN_PIN, INPUT_PULLUP);
+    pinMode(BASKET_L_LIMIT_PIN, INPUT_PULLUP);
+    pinMode(BASKET_R_LIMIT_PIN, INPUT_PULLUP);
     pinMode(START_GAME_PIN, INPUT);
     pinMode(BASKET_SENSOR_PIN, INPUT);
     pinMode(MAGAZINE_SENSOR_PIN, INPUT);
     pinMode(MAGAZINE_BLOWER_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
+    pinMode(BASKET_MOTOR_A_PIN, OUTPUT);
+    pinMode(BASKET_MOTOR_B_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
+    digitalWrite(BASKET_MOTOR_A_PIN, LOW);
+    digitalWrite(BASKET_MOTOR_B_PIN, LOW);
 
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
@@ -207,6 +232,7 @@ void setup() {
 }
 
 void loop() {
+    basket_movement_update();
     // if (check_ball_loaded()) {   //TODO: fix this function. It makes the home sensors gpios permanent and monitor closes the machine.
         if (start_btn.pressed()) game_start();  //based on 1000us of the coin pin
     // }
