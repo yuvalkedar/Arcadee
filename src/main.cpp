@@ -72,6 +72,7 @@ volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0x
 volatile uint8_t position;
 int increment = 1;
 bool basket_dir = 0;
+bool game_on = 0;
 
 void basket_movement(bool A, bool B) {
     digitalWrite(BASKET_MOTOR_A_PIN, A);
@@ -82,7 +83,12 @@ void basket_movement_update() {
     if (digitalRead(BASKET_L_LIMIT_PIN) && !digitalRead(BASKET_R_LIMIT_PIN)) basket_dir = 0;
     if (!digitalRead(BASKET_L_LIMIT_PIN) && digitalRead(BASKET_R_LIMIT_PIN)) basket_dir = 1;
     // if (!digitalRead(BASKET_L_LIMIT_PIN) || !digitalRead(BASKET_R_LIMIT_PIN)) basket_dir = !basket_dir;
-    (basket_dir) ? basket_movement(1, 0) : basket_movement(0, 1);
+    if (game_on) {
+        (basket_dir) ? basket_movement(1, 0) : basket_movement(0, 1);
+    }
+    else {
+        basket_movement(0,0);
+    }
 }
 
 void limit_switches(bool state) {
@@ -96,6 +102,7 @@ void winning_check() {
 }
 
 void game_start() {  // resets all parameters
+    game_on = 1;
     limit_switches(0);
     position = AIMING_SERVO_MAX;
     aiming.write(position);  // restart aiming servo position
@@ -103,7 +110,6 @@ void game_start() {  // resets all parameters
     ESC.write(CANON_MIN);
     led_bar = 0;
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    // basket_movement_update();
 }
 
 void reset_cb() {
@@ -115,7 +121,7 @@ void reset_cb() {
     led_bar = 0;
     strength_bar.clear();
     strength_bar.show();
-    // basket_movement(0, 0);
+    game_on = 0;
 }
 
 void launcher_cb() {  // when launcher button released
@@ -214,8 +220,8 @@ void setup() {
     pinMode(BASKET_MOTOR_A_PIN, OUTPUT);
     pinMode(BASKET_MOTOR_B_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    digitalWrite(BASKET_MOTOR_A_PIN, LOW);
-    digitalWrite(BASKET_MOTOR_B_PIN, LOW);
+    basket_movement(0, 0);
+
 
     pinMode(LIMIT_SWITCH_1_PIN, OUTPUT);
     pinMode(LIMIT_SWITCH_2_PIN, OUTPUT);
