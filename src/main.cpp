@@ -46,23 +46,26 @@ DP, G, F, E, D, C, B, A
 #define CLK_PIN (10)
 #define DATA_PIN (11)
 #define LATCH_PIN (13)
-uint8_t char_array[16] = {123, 96, 93, 117, 102, 55, 63, 97, 127, 119, 111, 62, 27, 124, 31, 15};
+uint8_t char_array[10] = {123, 96, 93, 117, 102, 55, 63, 97, 127, 119};   // without characters
+// uint8_t char_array[16] = {123, 96, 93, 117, 102, 55, 63, 97, 127, 119, 111, 62, 27, 124, 31, 15};   // with characters
 
 void setup() {
     Serial.begin(115200);
     pinMode(DATA_PIN, OUTPUT);  
     pinMode(LATCH_PIN, OUTPUT);
     pinMode (CLK_PIN, OUTPUT);
+
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
     digitalWrite(CLK_PIN,LOW);
 }
 
 void loop() {
-  for (uint8_t num = 0; num < 16; num++) {
     digitalWrite(LATCH_PIN,LOW);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[num]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[6]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[9]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[9]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[1]);
     digitalWrite(LATCH_PIN,HIGH);
-    delay(1000);
-  }
+    delay(5);
 }
