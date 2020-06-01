@@ -70,7 +70,7 @@ volatile uint8_t led_bar = 0;
 volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 
 volatile uint8_t position;
-int increment = 1;
+int increment = 5;
 bool basket_dir = 0;
 bool game_on = 0;
 
