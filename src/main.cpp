@@ -77,6 +77,7 @@ long rand_digit_1;
 long rand_digit_2;
 long rand_digit_3;
 long rand_digit_4;
+char ser_input;
 
 uint16_t get_btns_state() {
     uint16_t btns_mask = 0;
@@ -86,8 +87,6 @@ uint16_t get_btns_state() {
     
     return btns_mask;
 }
-
-void winning_check() {}
 
 void generate_code() {
     for (uint8_t d = 60; d > 0; d -= 5) {
@@ -139,7 +138,7 @@ void setup() {
 }
 
 void loop() {
-    #ifndef DEBUG
+    #ifdef DEBUG
     // Serial.println(mask, BIN);
     // delay(500);
     // Serial.println(digitalRead(SENS_1_PIN));
@@ -151,6 +150,7 @@ void loop() {
     Serial.println("\n");
     delay(50);
 #else
-    generate_code();
+    ser_input = Serial.read();
+    if (ser_input == 'g') generate_code();
 #endif
 }
