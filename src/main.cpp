@@ -113,6 +113,49 @@ void generate_code() {
     delay(3000);
 }
 
+void delete_digit(uint8_t digit) {
+    switch (digit) {
+        case 1:
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_1]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
+            break;
+        case 2:
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_1]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
+            break;
+        case 3:
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_1]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
+            break;
+        case 4:
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
+            delay(1500);
+            generate_code();
+            break;
+    }
+}
+
+void update_code(uint16_t mask, long dig_1, long dig_2, long dig_3, long dig_4) { //TODO: need to know the temporary random code to compare user's input
+
+}
+
 void setup() {
     Serial.begin(115200);
     pinMode(DATA_PIN, OUTPUT);  
@@ -152,5 +195,10 @@ void loop() {
 #else
     ser_input = Serial.read();
     if (ser_input == 'g') generate_code();
+    if (ser_input == 'a') delete_digit(1);
+    if (ser_input == 's') delete_digit(2);
+    if (ser_input == 'd') delete_digit(3);
+    if (ser_input == 'f') delete_digit(4);
+    // update_code(get_btns_state());
 #endif
 }
