@@ -42,11 +42,13 @@ DP, G, F, E, D, C, B, A
 BTNS KEYBOARD:
 
 |-------|-------|-------|
-|   1   |   2   |   3   |
+|       |   1   |       |
 |-------|-------|-------|
-|   4   |   5   |   6   |
+|    2  |   3   |   4   |
 |-------|-------|-------|
-|   7   |   8   |   9   |
+|     5 |       | 6     |
+|-------|-------|-------|
+| 7     |   8   |     9 |
 |-------|-------|-------|
 
 */
@@ -57,18 +59,18 @@ BTNS KEYBOARD:
 
 // #define DEBUG
 
-#define BTN_1_PIN (2)
-#define BTN_2_PIN (3)
-#define BTN_3_PIN (4)
-#define BTN_4_PIN (5)
-#define BTN_5_PIN (6)
-#define BTN_6_PIN (7)
-#define BTN_7_PIN (8)
-#define BTN_8_PIN (9)
-#define BTN_9_PIN (10)
-#define DATA_PIN (11)
-#define CLK_PIN (12)
-#define LATCH_PIN (13)
+#define BTN_1_PIN (A0)
+#define BTN_2_PIN (A1)
+#define BTN_3_PIN (A2)
+#define BTN_4_PIN (A3)
+#define BTN_5_PIN (A4)
+#define BTN_6_PIN (A5)
+#define BTN_7_PIN (A6)
+#define BTN_8_PIN (A7)
+#define BTN_9_PIN (11)
+#define DATA_PIN (10)
+#define CLK_PIN (9)
+#define LATCH_PIN (6)
 
 Button btn_1(BTN_1_PIN);
 Button btn_2(BTN_2_PIN);
@@ -240,7 +242,7 @@ void setup() {
 }
 
 void loop() {
-    #ifdef DEBUG
+    #ifndef DEBUG
     // Serial.println(mask, BIN);
     // delay(500);
     // Serial.println(digitalRead(SENS_1_PIN));
