@@ -47,8 +47,8 @@
 #define CALIBRATION_MS (1000)
 #define LED_BAR_UPDATE_MS (300)
 #define AIMING_UPDATE_MS (40)
-#define AIMING_SERVO_MIN (20)
-#define AIMING_SERVO_MAX (165)
+#define AIMING_SERVO_MIN (40)
+#define AIMING_SERVO_MAX (95)
 #define MAGAZINE_LOADING_POSITION (90)
 #define MAGAZINE_RESTART_POSITION (180)
 
@@ -70,7 +70,7 @@ volatile uint8_t led_bar = 0;
 volatile uint32_t led_bar_colour[NUM_PIXELS] = {0x00cc00, 0x00cc00, 0x66cc00, 0xcccc00, 0xff9900, 0xff6600, 0xff3300, 0xff0000};
 
 volatile uint8_t position;
-int increment = 5;
+int increment = 1;
 bool basket_dir = 0;
 bool game_on = 0;
 
