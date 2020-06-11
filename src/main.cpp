@@ -7,7 +7,7 @@
 
 #define BTN_PIN (4)
 #define SERVO_PIN (3)
-#define WINNING_SENSOR_PIN (5)
+#define WINNING_SENSOR_PIN (7)
 
 #define SERVO_MIN (20)
 #define SERVO_MAX (110)
@@ -28,6 +28,7 @@ void setup() {
     pinMode(SERVO_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
 
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
     door.attach(SERVO_PIN);
     door.write(SERVO_MAX);
 
@@ -51,6 +52,9 @@ void loop() {
         digitalWrite(WINNING_SENSOR_PIN, HIGH);
         reset_timer.start();
     }
+    // else {
+                // digitalWrite(WINNING_SENSOR_PIN, LOW);
+    // }
 
     TimerManager::instance().update();
 }
