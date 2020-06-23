@@ -54,8 +54,6 @@ BTNS KEYBOARD:
 */
 
 #include <Arduino.h>
-#include <Button.h>  // https://github.com/madleech/Button
-
 
 // #define DEBUG
 
@@ -67,26 +65,25 @@ BTNS KEYBOARD:
 #define BTN_6_PIN (A5)
 #define BTN_7_PIN (A6)
 #define BTN_8_PIN (A7)
-#define BTN_9_PIN (11)
-#define DATA_PIN (10)
-#define CLK_PIN (9)
-#define LATCH_PIN (6)
 
-Button btn_1(BTN_1_PIN);
-Button btn_2(BTN_2_PIN);
-Button btn_3(BTN_3_PIN);
-Button btn_4(BTN_4_PIN);
-Button btn_5(BTN_5_PIN);
-Button btn_6(BTN_6_PIN);
-Button btn_7(BTN_7_PIN);
-Button btn_8(BTN_8_PIN);
-Button btn_9(BTN_9_PIN);
+#define DATA_PIN (11)
+#define CLK_PIN (10)
+#define LATCH_PIN (9)
 
+#define SENS_1_THRESHOLD (700)
+#define SENS_2_THRESHOLD (700)
+#define SENS_3_THRESHOLD (750)
+#define SENS_4_THRESHOLD (700)
+#define SENS_5_THRESHOLD (700)
+#define SENS_6_THRESHOLD (700)
+#define SENS_7_THRESHOLD (700)
+#define SENS_8_THRESHOLD (700)
 
-uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127, 119};   // without characters and zero (= 123)
+uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127};   // without characters, zero (= 123), and nine (?=119)
 uint16_t num_array[9] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
 uint8_t segment[7] = {0b01000000, 0b00000001, 0b00000010, 0b00000100, 0b00100000, 0b00010000, 0b00001000};
-uint8_t btns_pins[9] = {BTN_1_PIN ,BTN_2_PIN ,BTN_3_PIN ,BTN_4_PIN ,BTN_5_PIN ,BTN_6_PIN ,BTN_7_PIN ,BTN_8_PIN ,BTN_9_PIN};
+uint8_t btns_pins[8] = {BTN_1_PIN ,BTN_2_PIN ,BTN_3_PIN ,BTN_4_PIN ,BTN_5_PIN ,BTN_6_PIN ,BTN_7_PIN ,BTN_8_PIN};
+uint16_t sensor_threshold[8] = {SENS_1_THRESHOLD, SENS_2_THRESHOLD, SENS_3_THRESHOLD, SENS_4_THRESHOLD, SENS_5_THRESHOLD, SENS_6_THRESHOLD, SENS_7_THRESHOLD, SENS_8_THRESHOLD};
 // uint8_t char_array[16] = {123, 96, 93, 117, 102, 55, 63, 97, 127, 119, 111, 62, 27, 124, 31, 15};   // with characters
 long rand_digit_4;
 long rand_digit_3;
@@ -102,13 +99,15 @@ enum State {
 };
 uint8_t state = DIGIT_1;
 
-uint16_t get_btns_state() {
+uint16_t get_sensors_state() {
     uint16_t btns_mask = 0;
-    for (uint16_t i = 0; i < 9; i++) {
-        btns_mask |= (uint16_t)(digitalRead(btns_pins[i]) << i);
+    for (uint16_t i = 0; i < sizeof(btns_pins); i++) {
+        if (analogRead(btns_pins[i]) <= sensor_threshold[i]){
+            btns_mask |= 1 << i;
+        }
     }
-    btns_mask = ~btns_mask - 65024;
-    return btns_mask;   // Serial prints: 511 = no press, 510 = 1, 509 = 2, 507 = 3, 503 = 4, 495 = 5, 479 = 6, 447 = 7, 383 = 8, 255 = 9
+    // Serial.println(btns_mask);   // Serial prints: 0 = no sens, 1 = 1, 2 = 2, 4 = 3, 8 = 4, 16 = 5, 32 = 6, 64 = 7, 128 = 8
+    return btns_mask;
 }
 
 void generate_code() {
@@ -123,10 +122,10 @@ void generate_code() {
             delay(d);  
         }
     }
-    rand_digit_4 = random(0,9);
-    rand_digit_3 = random(0,9);
-    rand_digit_2 = random(0,9);
-    rand_digit_1 = random(0,9);
+    rand_digit_4 = random(0,8);
+    rand_digit_3 = random(0,8);
+    rand_digit_2 = random(0,8);
+    rand_digit_1 = random(0,8);
     digitalWrite(LATCH_PIN,LOW);
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
@@ -208,20 +207,21 @@ void update_code(uint16_t mask) {
 
 void setup() {
     Serial.begin(115200);
-    btn_1.begin();
-    btn_2.begin();
-    btn_3.begin();
-    btn_4.begin();
-    btn_5.begin();
-    btn_6.begin();
-    btn_7.begin();
-    btn_8.begin();
-    btn_9.begin();
+
     pinMode(DATA_PIN, OUTPUT);  
     pinMode(LATCH_PIN, OUTPUT);
-    pinMode (CLK_PIN, OUTPUT);
+    pinMode(CLK_PIN, OUTPUT);
 
-    for (uint8_t i = 0; i <= 8; i++) pinMode(btns_pins[i], INPUT_PULLUP);
+    pinMode(BTN_1_PIN, INPUT);
+    pinMode(BTN_2_PIN, INPUT);
+    pinMode(BTN_3_PIN, INPUT);
+    pinMode(BTN_4_PIN, INPUT);
+    pinMode(BTN_5_PIN, INPUT);
+    pinMode(BTN_6_PIN, INPUT);
+    pinMode(BTN_7_PIN, INPUT);
+    pinMode(BTN_8_PIN, INPUT);
+
+    // for (uint8_t i = 0; i <= 8; i++) pinMode(btns_pins[i], INPUT_PULLUP);
 
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
@@ -242,20 +242,32 @@ void setup() {
 }
 
 void loop() {
-    #ifndef DEBUG
+    #ifdef DEBUG
     // Serial.println(mask, BIN);
     // delay(500);
-    // Serial.println(digitalRead(SENS_1_PIN));
+
+    Serial.print(analogRead(BTN_1_PIN));
+    Serial.print("\t");
+    Serial.print(analogRead(BTN_2_PIN));
+    Serial.print("\t");
+    Serial.print(analogRead(BTN_3_PIN));
+    Serial.print("\t");
+    Serial.print(analogRead(BTN_4_PIN));
+    Serial.print("\t");
+    Serial.print(analogRead(BTN_5_PIN));
+    Serial.print("\t");
+    Serial.print(analogRead(BTN_6_PIN));
+    Serial.print("\t");
+    Serial.print(analogRead(BTN_7_PIN));
+    Serial.print("\t");
+    Serial.println(analogRead(BTN_8_PIN));
+    delay(500);
+    
+    // get_sensors_state();
     // delay(500);
-    uint16_t state = get_btns_state();
-    for (uint16_t mask = (uint16_t)1 << 8; mask; mask >>= 1) {
-        Serial.print((state & mask) ? '1' : '0');
-    }
-    Serial.println("\n");
-    delay(50);
 #else
     ser_input = Serial.read();
     if (ser_input == 'g') generate_code();
-    update_code(get_btns_state());
+    update_code(get_sensors_state());
 #endif
 }
