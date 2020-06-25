@@ -38,19 +38,6 @@ DP, G, F, E, D, C, B, A
 01111100 - D
 00011111 - E
 00001111 - F
-
-BTNS KEYBOARD:
-
-|-------|-------|-------|
-|       |   1   |       |
-|-------|-------|-------|
-|    2  |   3   |   4   |
-|-------|-------|-------|
-|     5 |       | 6     |
-|-------|-------|-------|
-| 7     |   8   |     9 |
-|-------|-------|-------|
-
 */
 
 #include <Arduino.h>
@@ -80,7 +67,7 @@ BTNS KEYBOARD:
 #define SENS_4_THRESHOLD (700)
 #define SENS_5_THRESHOLD (700)
 #define SENS_6_THRESHOLD (700)
-#define SENS_7_THRESHOLD (700)
+#define SENS_7_THRESHOLD (650)
 #define SENS_8_THRESHOLD (700)
 #define WIN_SERVO_MAX (10)
 #define WIN_SERVO_MIN (130)
@@ -121,18 +108,9 @@ uint16_t get_sensors_state() {
     return btns_mask;
 }
 
-void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
-    if (dir) {
-        for (uint8_t i = WIN_SERVO_MAX; i <= WIN_SERVO_MIN; i += 5) {
-            win_servo.write(i);
-            delay(WIN_SERVO_DELAY_MS);
-        }
-    } else {
-        for (uint8_t i = WIN_SERVO_MIN; i >= WIN_SERVO_MAX; i -= 5) {
-            win_servo.write(i);
-            delay(WIN_SERVO_DELAY_MS);
-        }
-    }
+void delay_millis(uint32_t ms) {
+    uint32_t start_ms = millis();
+    while (millis() - start_ms < ms);
 }
 
 void generate_code() {
@@ -144,7 +122,7 @@ void generate_code() {
             shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,segment[i]);
             shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,segment[i]);
             digitalWrite(LATCH_PIN,HIGH);
-            delay(d);  
+            delay_millis(d);  
         }
     }
     rand_digit_4 = random(0,8);
@@ -157,6 +135,20 @@ void generate_code() {
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_1]);
     digitalWrite(LATCH_PIN,HIGH);
+}
+
+void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
+    if (dir) {
+        for (uint8_t i = WIN_SERVO_MAX; i <= WIN_SERVO_MIN; i += 5) {
+            win_servo.write(i);
+            delay_millis(WIN_SERVO_DELAY_MS);
+        }
+    } else {
+        for (uint8_t i = WIN_SERVO_MIN; i >= WIN_SERVO_MAX; i -= 5) {
+            win_servo.write(i);
+            delay_millis(WIN_SERVO_DELAY_MS);
+        }
+    }
 }
 
 void delete_digit(uint8_t digit) {
@@ -201,21 +193,21 @@ void update_code(uint16_t mask) {
         case DIGIT_1:
             if (mask == num_array[rand_digit_1]) {
                 delete_digit(1);
-                delay(4000);    // Delay overcomes faulty press when two or more following numbers are identical
+                delay(2000);    // Delay overcomes faulty press when two or more following numbers are identical
                 state = DIGIT_2;
             }
             break;
         case DIGIT_2:
             if (mask == num_array[rand_digit_2]) {
                 delete_digit(2);
-                delay(4000);
+                delay(2000);
                 state = DIGIT_3;
             }
             break;
         case DIGIT_3:
             if (mask == num_array[rand_digit_3]) {
                 delete_digit(3);
-                delay(4000);
+                delay(2000);
                 state = DIGIT_4;
             }
             break;
@@ -224,6 +216,7 @@ void update_code(uint16_t mask) {
                 delete_digit(4);
                 update_win_servo(1);
                 reset_timer.start();
+                delay(2000);
                 state = DIGIT_1;
             }
             break;
@@ -231,6 +224,7 @@ void update_code(uint16_t mask) {
 }
 
 void reset_cb(){
+        reset_timer.stop();
         update_win_servo(0);    //closes the door
         generate_code();
 }
@@ -256,8 +250,6 @@ void setup() {
     pinMode(BTN_6_PIN, INPUT);
     pinMode(BTN_7_PIN, INPUT);
     pinMode(BTN_8_PIN, INPUT);
-
-    // for (uint8_t i = 0; i <= 8; i++) pinMode(btns_pins[i], INPUT_PULLUP);
 
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
@@ -297,13 +289,24 @@ void loop() {
     Serial.print(analogRead(BTN_7_PIN));
     Serial.print("\t");
     Serial.println(analogRead(BTN_8_PIN));
-    delay(500);
-    
+    delay_millis(500);
+
+    // generate_code();
+    // delay(1000);
+    // generate_code();
+    // delay(1000);
+    // generate_code();
+    // delay(1000);
+    // generate_code();
+    // delay(1000);
+    // generate_code();
+    // delay(1000);
+
     // get_sensors_state();
     // delay(500);
 #else
-    ser_input = Serial.read();
-    if (ser_input == 'g') generate_code();
+    // ser_input = Serial.read();
+    // if (ser_input == 'g') generate_code();
     update_code(get_sensors_state());
 
     TimerManager::instance().update();
