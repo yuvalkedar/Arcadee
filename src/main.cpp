@@ -82,9 +82,10 @@ BTNS KEYBOARD:
 #define SENS_6_THRESHOLD (700)
 #define SENS_7_THRESHOLD (700)
 #define SENS_8_THRESHOLD (700)
-#define WIN_SERVO_MAX (80)
-#define WIN_SERVO_MIN (180)
+#define WIN_SERVO_MAX (10)
+#define WIN_SERVO_MIN (130)
 #define RESET_DELAY_MS (3000)
+#define WIN_SERVO_DELAY_MS (150)
 
 Servo win_servo;
 Timer reset_timer;
@@ -118,6 +119,20 @@ uint16_t get_sensors_state() {
     }
     // Serial.println(btns_mask);   // Serial prints: 0 = no sens, 1 = 1, 2 = 2, 4 = 3, 8 = 4, 16 = 5, 32 = 6, 64 = 7, 128 = 8
     return btns_mask;
+}
+
+void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
+    if (dir) {
+        for (uint8_t i = WIN_SERVO_MAX; i <= WIN_SERVO_MIN; i += 5) {
+            win_servo.write(i);
+            delay(WIN_SERVO_DELAY_MS);
+        }
+    } else {
+        for (uint8_t i = WIN_SERVO_MIN; i >= WIN_SERVO_MAX; i -= 5) {
+            win_servo.write(i);
+            delay(WIN_SERVO_DELAY_MS);
+        }
+    }
 }
 
 void generate_code() {
@@ -207,7 +222,7 @@ void update_code(uint16_t mask) {
         case DIGIT_4:
             if (mask == num_array[rand_digit_4]) {
                 delete_digit(4);
-                win_servo.write(WIN_SERVO_MIN);
+                update_win_servo(1);
                 reset_timer.start();
                 state = DIGIT_1;
             }
@@ -216,7 +231,7 @@ void update_code(uint16_t mask) {
 }
 
 void reset_cb(){
-        win_servo.write(WIN_SERVO_MAX);
+        update_win_servo(0);    //closes the door
         generate_code();
 }
 
