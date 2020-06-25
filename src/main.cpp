@@ -54,6 +54,9 @@ BTNS KEYBOARD:
 */
 
 #include <Arduino.h>
+#include <Servo.h>
+#include <timer.h>  // https://github.com/brunocalou/Timer
+#include <timerManager.h>
 
 // #define DEBUG
 
@@ -65,6 +68,7 @@ BTNS KEYBOARD:
 #define BTN_6_PIN (A5)
 #define BTN_7_PIN (A6)
 #define BTN_8_PIN (A7)
+#define WIN_SERVO_PIN (5)
 
 #define DATA_PIN (11)
 #define CLK_PIN (10)
@@ -78,6 +82,12 @@ BTNS KEYBOARD:
 #define SENS_6_THRESHOLD (700)
 #define SENS_7_THRESHOLD (700)
 #define SENS_8_THRESHOLD (700)
+#define WIN_SERVO_MAX (80)
+#define WIN_SERVO_MIN (180)
+#define RESET_DELAY_MS (3000)
+
+Servo win_servo;
+Timer reset_timer;
 
 uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127};   // without characters, zero (= 123), and nine (?=119)
 uint16_t num_array[9] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
@@ -167,8 +177,6 @@ void delete_digit(uint8_t digit) {
             shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
             shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
             digitalWrite(LATCH_PIN,HIGH);
-            delay(1500);
-            generate_code();
             break;
     }
 }
@@ -199,14 +207,27 @@ void update_code(uint16_t mask) {
         case DIGIT_4:
             if (mask == num_array[rand_digit_4]) {
                 delete_digit(4);
+                win_servo.write(WIN_SERVO_MIN);
+                reset_timer.start();
                 state = DIGIT_1;
             }
             break;
     }
 }
 
+void reset_cb(){
+        win_servo.write(WIN_SERVO_MAX);
+        generate_code();
+}
+
 void setup() {
     Serial.begin(115200);
+
+    win_servo.attach(WIN_SERVO_PIN);
+    win_servo.write(WIN_SERVO_MAX);  // restart win servo position
+
+    reset_timer.setCallback(reset_cb);
+    reset_timer.setTimeout(RESET_DELAY_MS);
 
     pinMode(DATA_PIN, OUTPUT);  
     pinMode(LATCH_PIN, OUTPUT);
@@ -269,5 +290,7 @@ void loop() {
     ser_input = Serial.read();
     if (ser_input == 'g') generate_code();
     update_code(get_sensors_state());
+
+    TimerManager::instance().update();
 #endif
 }
