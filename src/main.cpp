@@ -60,6 +60,7 @@ DP, G, F, E, D, C, B, A
 #define DATA_PIN (11)
 #define CLK_PIN (10)
 #define LATCH_PIN (9)
+#define WINNING_SENSOR_PIN (7)  // winning switch pin in the RPi (GPIO12)
 
 #define SENS_1_THRESHOLD (700)
 #define SENS_2_THRESHOLD (700)
@@ -191,6 +192,7 @@ void delete_digit(uint8_t digit) {
 void update_code(uint16_t mask) {
     switch(state) {
         case DIGIT_1:
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (mask == num_array[rand_digit_1]) {
                 delete_digit(1);
                 delay(2000);    // Delay overcomes faulty press when two or more following numbers are identical
@@ -198,6 +200,7 @@ void update_code(uint16_t mask) {
             }
             break;
         case DIGIT_2:
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (mask == num_array[rand_digit_2]) {
                 delete_digit(2);
                 delay(2000);
@@ -205,6 +208,7 @@ void update_code(uint16_t mask) {
             }
             break;
         case DIGIT_3:
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (mask == num_array[rand_digit_3]) {
                 delete_digit(3);
                 delay(2000);
@@ -212,21 +216,26 @@ void update_code(uint16_t mask) {
             }
             break;
         case DIGIT_4:
+            // winning_check();
             if (mask == num_array[rand_digit_4]) {
                 delete_digit(4);
                 update_win_servo(1);
                 reset_timer.start();
+                digitalWrite(WINNING_SENSOR_PIN, HIGH);
+                // Serial.println("YOU WON");
                 delay(2000);
                 state = DIGIT_1;
-            }
+            } else
+                digitalWrite(WINNING_SENSOR_PIN, LOW);
             break;
     }
 }
 
 void reset_cb(){
-        reset_timer.stop();
-        update_win_servo(0);    //closes the door
-        generate_code();
+    reset_timer.stop();
+    update_win_servo(0);    //closes the door
+    generate_code();
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
 void setup() {
@@ -241,6 +250,7 @@ void setup() {
     pinMode(DATA_PIN, OUTPUT);  
     pinMode(LATCH_PIN, OUTPUT);
     pinMode(CLK_PIN, OUTPUT);
+    pinMode(WINNING_SENSOR_PIN, OUTPUT);
 
     pinMode(BTN_1_PIN, INPUT);
     pinMode(BTN_2_PIN, INPUT);
@@ -251,6 +261,7 @@ void setup() {
     pinMode(BTN_7_PIN, INPUT);
     pinMode(BTN_8_PIN, INPUT);
 
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
     digitalWrite(CLK_PIN,LOW);
