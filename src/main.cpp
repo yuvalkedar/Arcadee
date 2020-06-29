@@ -64,7 +64,7 @@ DP, G, F, E, D, C, B, A
 #define WINNING_SENSOR_PIN (7)  // winning switch pin in the RPi (GPIO12)
 #define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
 
-#define SENS_1_THRESHOLD (700)
+#define SENS_1_THRESHOLD (630)
 #define SENS_2_THRESHOLD (700)
 #define SENS_3_THRESHOLD (750)
 #define SENS_4_THRESHOLD (700)
@@ -160,44 +160,52 @@ void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
     }
 }
 
-//TODO: Fix numbers bug - sometimes it displaying wierd digits.
 void delete_digit(uint8_t digit) {
     switch (digit) {
         case 1:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
+            for (uint8_t i = 0; i <= 2; i++) {  //Do it twice just in case of getting wierd characters
+                digitalWrite(LATCH_PIN,LOW);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                digitalWrite(LATCH_PIN,HIGH);
+            }
             break;
         case 2:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
+            for (uint8_t i = 0; i <= 2; i++) {
+                digitalWrite(LATCH_PIN,LOW);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                digitalWrite(LATCH_PIN,HIGH);
+            }
             break;
         case 3:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
+            for (uint8_t i = 0; i <= 2; i++) {
+                digitalWrite(LATCH_PIN,LOW);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                digitalWrite(LATCH_PIN,HIGH);
+            }
             break;
         case 4:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
+            for (uint8_t i = 0; i <= 2; i++) {
+                digitalWrite(LATCH_PIN,LOW);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+                digitalWrite(LATCH_PIN,HIGH);
+            }
             break;
     }
 }
 
+//TODO: Fix numbers bug - sometimes it displaying wierd digits after detecting.
 void update_code(uint16_t mask) {
     switch(state) {
         case DIGIT_1:
