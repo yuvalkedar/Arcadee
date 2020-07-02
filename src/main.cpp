@@ -58,9 +58,11 @@ DP, G, F, E, D, C, B, A
 #define BTN_8_PIN (A7)
 #define BALL_SERVO_PIN (3)
 #define WIN_SERVO_PIN (5)
+#define BLOWER_PIN (6)
 #define DATA_PIN (11)
 #define CLK_PIN (10)
 #define LATCH_PIN (9)
+#define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
 #define WINNING_SENSOR_PIN (7)  // winning switch pin in the RPi (GPIO12)
 #define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
 
@@ -74,8 +76,8 @@ DP, G, F, E, D, C, B, A
 #define SENS_8_THRESHOLD (700)
 #define WIN_SERVO_MAX (10)
 #define WIN_SERVO_MIN (130)
-#define BALL_SERVO_MAX (180)
-#define BALL_SERVO_MIN (80)
+#define BALL_SERVO_MAX (130)    //OPEN POAITION
+#define BALL_SERVO_MIN (50)     //CLOSE POSITION
 #define WIN_RESET_DELAY_MS (3000)
 #define GAME_RESET_DELAY_MS (2000)
 #define WIN_SERVO_DELAY_MS (150)
@@ -84,7 +86,9 @@ Servo win_servo;
 Servo ball_servo;
 Timer win_reset_timer;
 Timer game_reset_timer;
+Timer blower_timer;
 Button second_btn(SECOND_BTN_PIN);
+Button start_btn(START_GAME_PIN);
 
 uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127};   // without characters, zero (= 123), and nine (?=119)
 uint16_t num_array[9] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
@@ -163,44 +167,36 @@ void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
 void delete_digit(uint8_t digit) {
     switch (digit) {
         case 1:
-            for (uint8_t i = 0; i <= 2; i++) {  //Do it twice just in case of getting wierd characters
-                digitalWrite(LATCH_PIN,LOW);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                digitalWrite(LATCH_PIN,HIGH);
-            }
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
             break;
         case 2:
-            for (uint8_t i = 0; i <= 2; i++) {
-                digitalWrite(LATCH_PIN,LOW);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                digitalWrite(LATCH_PIN,HIGH);
-            }
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
             break;
         case 3:
-            for (uint8_t i = 0; i <= 2; i++) {
-                digitalWrite(LATCH_PIN,LOW);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                digitalWrite(LATCH_PIN,HIGH);
-            }
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
             break;
         case 4:
-            for (uint8_t i = 0; i <= 2; i++) {
-                digitalWrite(LATCH_PIN,LOW);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-                digitalWrite(LATCH_PIN,HIGH);
-            }
+            digitalWrite(LATCH_PIN,LOW);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
+            digitalWrite(LATCH_PIN,HIGH);
             break;
     }
 }
@@ -257,7 +253,12 @@ void win_reset_cb(){
 
 void game_reset_cb() {
     game_reset_timer.stop();
-    ball_servo.write(BALL_SERVO_MAX);
+    // ball_servo.write(BALL_SERVO_MIN);
+}
+
+void blower_reset_cb() {
+    blower_timer.stop();
+    // digitalWrite(BLOWER_PIN, LOW);
 }
 
 void setup() {
@@ -275,10 +276,14 @@ void setup() {
     game_reset_timer.setCallback(game_reset_cb);
     game_reset_timer.setTimeout(GAME_RESET_DELAY_MS);
 
+    blower_timer.setCallback(blower_reset_cb);
+    game_reset_timer.setTimeout(GAME_RESET_DELAY_MS);
+
     pinMode(DATA_PIN, OUTPUT);  
     pinMode(LATCH_PIN, OUTPUT);
     pinMode(CLK_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
+    // pinMode(BLOWER_PIN, OUTPUT);
 
     pinMode(BTN_1_PIN, INPUT);
     pinMode(BTN_2_PIN, INPUT);
@@ -289,8 +294,10 @@ void setup() {
     pinMode(BTN_7_PIN, INPUT);
     pinMode(BTN_8_PIN, INPUT);
     pinMode(SECOND_BTN_PIN, INPUT_PULLUP);
+    pinMode(START_GAME_PIN, INPUT);
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
+    // digitalWrite(BLOWER_PIN, LOW);
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
     digitalWrite(CLK_PIN,LOW);
@@ -310,7 +317,7 @@ void setup() {
 }
 
 void loop() {
-    #ifdef DEBUG
+    #ifndef DEBUG
     Serial.print(analogRead(BTN_1_PIN));
     Serial.print("\t");
     Serial.print(analogRead(BTN_2_PIN));
@@ -330,10 +337,15 @@ void loop() {
 #else
     update_code(get_sensors_state());
 
+    if (start_btn.pressed()) ball_servo.write(BALL_SERVO_MIN);
+
     if (second_btn.released()) {
-        ball_servo.write(BALL_SERVO_MIN);
+        ball_servo.write(BALL_SERVO_MAX);
+        // digitalWrite(BLOWER_PIN, HIGH);
         game_reset_timer.start();
+        blower_timer.start();
     }
+
 
     TimerManager::instance().update();
 #endif
