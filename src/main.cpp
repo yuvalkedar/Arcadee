@@ -1,13 +1,13 @@
 /*
-	Safe Machine for Gigantic - Clawee.
+  Safe Machine for Gigantic - Clawee.
     Hit the correct code or get caught - then the code will regenerate itself.
 
     ========================================================================
 
-	Copyright (C) 2020 Yuval Kedar - KD Tech
-	Instagram: https://www.instagram.com/kd_technology/
-	Date: Jun 20
-	Dev board: Arduino Uno
+  Copyright (C) 2020 Yuval Kedar - KD Tech
+  Instagram: https://www.instagram.com/kd_technology/
+  Date: Jun 20
+  Dev board: Arduino Uno
 
         A
     ----------
@@ -66,14 +66,14 @@ DP, G, F, E, D, C, B, A
 #define WINNING_SENSOR_PIN (7)  // winning switch pin in the RPi (GPIO12)
 #define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
 
-#define SENS_1_THRESHOLD (630)
-#define SENS_2_THRESHOLD (700)
-#define SENS_3_THRESHOLD (750)
-#define SENS_4_THRESHOLD (700)
-#define SENS_5_THRESHOLD (700)
-#define SENS_6_THRESHOLD (700)
-#define SENS_7_THRESHOLD (650)
-#define SENS_8_THRESHOLD (700)
+#define SENS_1_THRESHOLD (600)
+#define SENS_2_THRESHOLD (600)
+#define SENS_3_THRESHOLD (600)
+#define SENS_4_THRESHOLD (600)
+#define SENS_5_THRESHOLD (600)
+#define SENS_6_THRESHOLD (600)
+#define SENS_7_THRESHOLD (600)
+#define SENS_8_THRESHOLD (600)
 #define WIN_SERVO_MAX (10)
 #define WIN_SERVO_MIN (130)
 #define BALL_SERVO_MAX (130)    //OPEN POAITION
@@ -103,10 +103,10 @@ long rand_digit_1;
 char ser_input;
 
 enum State {
-	DIGIT_1 = 1,
-	DIGIT_2 = 2,
-	DIGIT_3 = 3,
-	DIGIT_4 = 4
+  DIGIT_1 = 1,
+  DIGIT_2 = 2,
+  DIGIT_3 = 3,
+  DIGIT_4 = 4
 };
 uint8_t state = DIGIT_1;
 
@@ -317,7 +317,7 @@ void setup() {
 }
 
 void loop() {
-    #ifndef DEBUG
+    #ifdef DEBUG
     Serial.print(analogRead(BTN_1_PIN));
     Serial.print("\t");
     Serial.print(analogRead(BTN_2_PIN));
