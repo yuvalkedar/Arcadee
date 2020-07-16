@@ -56,15 +56,16 @@ DP, G, F, E, D, C, B, A
 #define BTN_6_PIN (A5)
 #define BTN_7_PIN (A6)
 #define BTN_8_PIN (A7)
+#define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
 #define BALL_SERVO_PIN (3)
+#define CLAW_BTN_PIN (4)
 #define WIN_SERVO_PIN (5)
 #define BLOWER_PIN (6)
-#define DATA_PIN (11)
-#define CLK_PIN (10)
-#define LATCH_PIN (9)
-#define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
 #define WINNING_SENSOR_PIN (7)  // winning switch pin in the RPi (GPIO12)
-#define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
+#define START_GAME_PIN (8)        // coin switch pin in the RPi (GPIO25)
+#define LATCH_PIN (9)
+#define CLK_PIN (10)
+#define DATA_PIN (11)
 
 #define SENS_1_THRESHOLD (600)
 #define SENS_2_THRESHOLD (600)
@@ -253,6 +254,7 @@ void win_reset_cb(){
 
 void game_reset_cb() {
     game_reset_timer.stop();
+    digitalWrite(CLAW_BTN_PIN,LOW);
     // ball_servo.write(BALL_SERVO_MIN);
 }
 
@@ -283,6 +285,7 @@ void setup() {
     pinMode(LATCH_PIN, OUTPUT);
     pinMode(CLK_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
+    pinMode(CLAW_BTN_PIN, OUTPUT);
     // pinMode(BLOWER_PIN, OUTPUT);
 
     pinMode(BTN_1_PIN, INPUT);
@@ -301,6 +304,7 @@ void setup() {
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
     digitalWrite(CLK_PIN,LOW);
+    digitalWrite(CLAW_BTN_PIN,LOW);
 
     randomSeed(analogRead(0));
 
@@ -341,6 +345,7 @@ void loop() {
 
     if (second_btn.released()) {
         ball_servo.write(BALL_SERVO_MAX);
+        digitalWrite(CLAW_BTN_PIN,HIGH);
         // digitalWrite(BLOWER_PIN, HIGH);
         game_reset_timer.start();
         blower_timer.start();
