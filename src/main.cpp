@@ -41,6 +41,7 @@ Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
 Button blue_btn(BLUE_BTN_PIN);
 Button red_btn(RED_BTN_PIN);
 Button coin_btn(COIN_PIN);
+// Button home_btn(LIMIT_SWITCH_PIN);
 Timer reset_timer;
 
 int8_t score = 0;
@@ -50,8 +51,11 @@ uint8_t start_point = 0;
 unsigned long last_update = 0;
 int8_t i = 0;  //TODO: change i and j to normal names...
 int8_t j = 0;
+
 bool limit_prev_state = 1;
 bool limit_present_state = 1;
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 250;
 
 void delay_millis(uint32_t ms) {
     uint32_t start_ms = millis();
@@ -174,6 +178,7 @@ void setup() {
     pinMode(LED_DATA_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(MOTOR_PIN, OUTPUT);
+    pinMode(LIMIT_SWITCH_PIN, INPUT);
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     digitalWrite(MOTOR_PIN, HIGH);  // motor off
@@ -181,6 +186,7 @@ void setup() {
     blue_btn.begin();
     red_btn.begin();
     coin_btn.begin();
+    // home_btn.begin();
 
     reset_timer.setCallback(reset_game);
     reset_timer.setTimeout(WINNING_FX_TIME);
@@ -200,16 +206,19 @@ void setup() {
 }
 
 void loop() {
-    limit_present_state = digitalRead(LIMIT_SWITCH_PIN);
+    bool reading = digitalRead(LIMIT_SWITCH_PIN);
 
     if(coin_btn.toggled()) digitalWrite(MOTOR_PIN, LOW);    // motor on
 
-    if(limit_present_state != limit_prev_state) {
-        if(limit_present_state && !limit_prev_state) {
-            digitalWrite(MOTOR_PIN, LOW);
-        }else digitalWrite(MOTOR_PIN, HIGH);
+    if(reading != limit_prev_state) lastDebounceTime = millis();
+
+    if ((millis() - lastDebounceTime) > debounceDelay) {
+        if (reading != limit_present_state) {
+            limit_present_state = reading;
+            (limit_present_state) ? digitalWrite(MOTOR_PIN, LOW) : digitalWrite(MOTOR_PIN, HIGH);
+        }
     }
-    limit_prev_state = limit_present_state;
+    limit_prev_state = reading;
 
     update_score(); 
     TimerManager::instance().update();
