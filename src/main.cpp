@@ -29,7 +29,7 @@
 #define COIN_PIN (13)
 #define LED_DATA_PIN (6)
 #define MOTOR_PIN   (7)
-#define BLUE_BTN_PIN (8)
+#define BLUE_BTN_PIN (5)
 #define RED_BTN_PIN (9)
 
 #define SERIAL_BAUDRATE (115200)
@@ -50,8 +50,8 @@ uint8_t start_point = 0;
 unsigned long last_update = 0;
 int8_t i = 0;  //TODO: change i and j to normal names...
 int8_t j = 0;
-bool limit_prev_state = 0;
-bool limit_present_state = 0;
+bool limit_prev_state = 1;
+bool limit_present_state = 1;
 
 void delay_millis(uint32_t ms) {
     uint32_t start_ms = millis();
@@ -200,16 +200,14 @@ void setup() {
 }
 
 void loop() {
-    // Serial.println(digitalRead(LIMIT_SWITCH_PIN));
-    // Serial.println(digitalRead(COIN_PIN));
     limit_present_state = digitalRead(LIMIT_SWITCH_PIN);
 
-    if(coin_btn.toggled()) digitalWrite(MOTOR_PIN, LOW);
-    // if(limit_switch.released()) Serial.println("pressed!!!");
+    if(coin_btn.toggled()) digitalWrite(MOTOR_PIN, LOW);    // motor on
 
     if(limit_present_state != limit_prev_state) {
-        if(!limit_present_state) digitalWrite(MOTOR_PIN, HIGH);
-        delay(100);
+        if(limit_present_state && !limit_prev_state) {
+            digitalWrite(MOTOR_PIN, LOW);
+        }else digitalWrite(MOTOR_PIN, HIGH);
     }
     limit_prev_state = limit_present_state;
 
