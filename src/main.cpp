@@ -97,7 +97,7 @@ void level_down(uint8_t wait, uint8_t led_num) {  //clear prev level's frame and
     }
 }
 
-void winning() {  // Rainbow cycle along whole strip.
+void winning() {  // Rainbow cycle
     for (long firstPixelHue = 0; firstPixelHue < 5 * 65536; firstPixelHue += 256) {
         for (uint8_t i = 0; i < strip.numPixels(); i++) {  // For each pixel in strip...
             int pixelHue = firstPixelHue + (i * 65536L / strip.numPixels());
@@ -117,8 +117,8 @@ void reset_game() {
 
 void winning_check() {
     if (score == 4) {
-        digitalWrite(WINNING_SENSOR_PIN, HIGH);
-        // Serial.println("YOU WON");
+        analogWrite(WINNING_SENSOR_PIN, 175);
+        Serial.println("YOU WON");
     } else
         digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
@@ -178,10 +178,10 @@ void setup() {
     pinMode(LED_DATA_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(MOTOR_PIN, OUTPUT);
-    pinMode(LIMIT_SWITCH_PIN, INPUT);
+    pinMode(LIMIT_SWITCH_PIN, INPUT_PULLUP);
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    digitalWrite(MOTOR_PIN, HIGH);  // motor off
+    digitalWrite(MOTOR_PIN, LOW);  // motor on
 
     blue_btn.begin();
     red_btn.begin();
@@ -208,7 +208,12 @@ void setup() {
 void loop() {
     bool reading = digitalRead(LIMIT_SWITCH_PIN);
 
-    if(coin_btn.toggled()) digitalWrite(MOTOR_PIN, LOW);    // motor on
+    if(coin_btn.pressed()) {
+        Serial.println("!GAME START!");
+        digitalWrite(MOTOR_PIN, LOW); // motor ON
+    }
+    
+    // if(home_btn.pressed()) Serial.println("~MOVING~");
 
     if(reading != limit_prev_state) lastDebounceTime = millis();
 
