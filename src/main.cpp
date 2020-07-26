@@ -19,7 +19,7 @@
 */
 
 #include <FastLED.h>
-#include <ezButton.h>
+// #include <ezButton.h>
 #include "Arduino.h"
 
 #define WINNING_SENSOR_PIN (12)
@@ -32,50 +32,46 @@
 #define LED_BRIGHTNESS (200)
 #define WINNING_FX_TIME (1000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
 
-ezButton blue_btn(BLUE_BTN_PIN);
-ezButton red_btn(RED_BTN_PIN);
+// ezButton blue_btn(BLUE_BTN_PIN);
+// ezButton red_btn(RED_BTN_PIN);
 CRGB leds[NUM_LEDS];
 
 uint8_t score = 0;
 uint8_t last_score = 0;
-uint8_t level[] = {0, 28, 48, 60, 64};  //levels 0 to 4 //TODO: check I'm not exceeding 64 LEDs - it may need to be 63.
-uint8_t start_point = 0;
-uint8_t current_pixel = 0;
-
-void delay_millis(uint32_t ms) {
-    uint32_t start_ms = millis();
-    while (millis() - start_ms < ms)
-        ;
-}
+uint8_t level[] = {0, 28, 48, 60, 63};  //levels 0 to 4 //TODO: check I'm not exceeding 64 LEDs - it may need to be 63.
 
 void level_up(uint8_t led_num) {
+    uint8_t start_point = 0;
     if (led_num == level[1]) start_point = 0;   //up from level 0 to 1
     if (led_num == level[2]) start_point = 28;  //up from level 1 to 2
     if (led_num == level[3]) start_point = 48;  //up from level 2 to 3
     if (led_num == level[4]) start_point = 60;  //...
 
-    for (current_pixel = start_point; current_pixel < led_num; current_pixel++) {
+    for (uint8_t current_pixel = start_point; current_pixel < led_num; current_pixel++) {
         leds[current_pixel] = CRGB::Blue;
         FastLED.show();
         delay(50);
     }
+    delay(2500); //debounce
 }
 
 void level_down(uint8_t led_num) {  //clear prev level's frame and do the opposite direction effect with red color
+    uint8_t start_point = 0;
     if (led_num == level[0]) start_point = 28;  //down from level 1 to 0
     if (led_num == level[1]) start_point = 48;  //down from level 2 to 1
     if (led_num == level[2]) start_point = 60;  //down from level 3 to 2
-    if (led_num == level[3]) start_point = 64;  //...
+    if (led_num == level[3]) start_point = 63;  //...
 
-    for (uint8_t i = start_point - 1; i > led_num; i--) {
+    for (int8_t i = start_point - 1; i >= led_num; i--) {
         leds[i] = CRGB::Red;
         FastLED.show();
         delay(50);
     }
-    for (uint8_t i = start_point - 1; i > led_num; i--) {
+    for (int8_t i = start_point - 1; i >= led_num; i--) {
         leds[i] = CRGB::Black;
         FastLED.show();
     }
+    delay(2500); //debounce
 }
 
 void fadeall() {
@@ -115,47 +111,47 @@ void winning_check() {
 }
 
 void update_score() {
-    if (blue_btn.isPressed()) {
+    // if (blue_btn.isPressed()) {
+    if (!digitalRead(BLUE_BTN_PIN)) {
         // score++;
         Serial.println("+PLUS+");
-        if (score++ >= 4) score = 4;    //TODO: Cheack if the last change works well. I may go back to int8_t score;
+        if (score++ >= 4) score = 4;
     }
 
-    if (red_btn.isPressed()) {
+    // if (red_btn.isPressed()) {
+    if (!digitalRead(RED_BTN_PIN)) {
         // score--;
         Serial.println("-MINUS-");
-        if (score-- <= 0) score = 0;    //TODO: cheack it isn't exceeding 0 to negative numbers.
+        if (score-- <= 0) score = 0;
     }
 
-    switch (score) {    //TODO: delete the switch loop. Put if statements instead.
-        case 0:
-            if (last_score == 1) level_down(level[0]);
-            last_score = 0;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
-            break;
-        case 1:
-            if (last_score == 0) level_up(level[1]);    // if last_score was 0 make the blue effect because level is up
-            if (last_score == 2) level_down(level[1]);  // if last_score was 2 make the red effect because level is down
-            last_score = 1;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
-            break;
-        case 2:
-            if (last_score == 1) level_up(level[2]);
-            if (last_score == 3) level_down(level[2]);
-            last_score = 2;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
-            break;
-        case 3:
-            if (last_score == 2) level_up(level[3]);
-            if (last_score == 4) level_down(level[3]);
-            last_score = 3;
-            digitalWrite(WINNING_SENSOR_PIN, LOW);
-            break;
-        case 4:
-            winning_check();
-            winning();
-            reset_game();
-            break;
+    if (score == 0){
+        if (last_score == 1) level_down(level[0]);
+        last_score = 0;
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
+    }
+    else if (score == 1) {
+        if (last_score == 0) level_up(level[1]);    // if last_score was 0 make the blue effect because level is up
+        if (last_score == 2) level_down(level[1]);  // if last_score was 2 make the red effect because level is down
+        last_score = 1;
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
+    }
+    else if (score == 2) {
+        if (last_score == 1) level_up(level[2]);
+        if (last_score == 3) level_down(level[2]);
+        last_score = 2;
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
+    }
+    else if (score == 3) {
+        if (last_score == 2) level_up(level[3]);
+        if (last_score == 4) level_down(level[3]);
+        last_score = 3;
+        digitalWrite(WINNING_SENSOR_PIN, LOW);
+    }
+    else if (score == 4) {
+        winning_check();
+        winning();  //this func makes issue when using ezButton.h. It calls "show" too many times.
+        reset_game();
     }
 }
 
@@ -165,8 +161,11 @@ void setup() {
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 
-    blue_btn.setDebounceTime();
-    red_btn.setDebounceTime();
+    pinMode(BLUE_BTN_PIN, INPUT_PULLUP);
+    pinMode(RED_BTN_PIN, INPUT_PULLUP);
+
+    // blue_btn.setDebounceTime(50);
+    // red_btn.setDebounceTime(50);
 
     FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
     FastLED.setBrightness(LED_BRIGHTNESS);
@@ -185,9 +184,9 @@ void setup() {
 }
 
 void loop() {
-    blue_btn.loop();
-    red_btn.loop();
-    Serial.println(".")
+    // blue_btn.loop();
+    // red_btn.loop();
+    // Serial.println(".");
 
     update_score();
 }
