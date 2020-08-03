@@ -166,43 +166,40 @@ void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
 }
 
 void delete_digit(uint8_t digit) {
-    switch (digit) {
-        case 1:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
-            break;
-        case 2:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
-            break;
-        case 3:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
-            break;
-        case 4:
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,0);
-            digitalWrite(LATCH_PIN,HIGH);
-            break;
+    uint8_t dig1, dig2, dig3, dig4;
+    if (digit == 1) {
+        dig1 = char_array[rand_digit_4];
+        dig2 = char_array[rand_digit_3];
+        dig3 = char_array[rand_digit_2];
+        dig4 = 0;
     }
+    else if (digit == 2) {
+        dig1 = char_array[rand_digit_4];
+        dig2 = char_array[rand_digit_3];
+        dig3 = 0;
+        dig4 = 0;
+    }
+    else if (digit == 3) {
+        dig1 = char_array[rand_digit_4];
+        dig2 = 0;
+        dig3 = 0;
+        dig4 = 0;
+    }
+    else if (digit == 4) {
+        dig1 = 0;
+        dig2 = 0;
+        dig3 = 0;
+        dig4 = 0;
+    }
+
+    digitalWrite(LATCH_PIN,LOW);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig1);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig2);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig3);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig4);
+    digitalWrite(LATCH_PIN,HIGH);
 }
 
-//TODO: Fix numbers bug - sometimes it displaying wierd digits after detecting.
 void update_code(uint16_t mask) {
     switch(state) {
         case DIGIT_1:
@@ -351,7 +348,7 @@ void loop() {
         blower_timer.start();
     }
 
-
     TimerManager::instance().update();
 #endif
+
 }
