@@ -78,7 +78,7 @@ DP, G, F, E, D, C, B, A
 #define WIN_SERVO_MAX (10)
 #define WIN_SERVO_MIN (130)
 #define BALL_SERVO_MAX (130)    //OPEN POAITION
-#define BALL_SERVO_MIN (80)     //CLOSE POSITION
+#define BALL_SERVO_MIN (30)     //CLOSE POSITION
 #define WIN_RESET_DELAY_MS (3000)
 #define GAME_RESET_DELAY_MS (2000)
 #define WIN_SERVO_DELAY_MS (150)
@@ -251,8 +251,8 @@ void win_reset_cb(){
 
 void game_reset_cb() {
     game_reset_timer.stop();
-    digitalWrite(CLAW_BTN_PIN,LOW);
-    // ball_servo.write(BALL_SERVO_MIN);
+    digitalWrite(CLAW_BTN_PIN,HIGH);
+    ball_servo.write(BALL_SERVO_MIN);
 }
 
 void blower_reset_cb() {
@@ -267,7 +267,7 @@ void setup() {
     win_servo.write(WIN_SERVO_MAX);  // restart win servo position
 
     ball_servo.attach(BALL_SERVO_PIN);
-    ball_servo.write(BALL_SERVO_MAX);  // restart ball servo position
+    ball_servo.write(BALL_SERVO_MIN);  // restart ball servo position
 
     win_reset_timer.setCallback(win_reset_cb);
     win_reset_timer.setTimeout(WIN_RESET_DELAY_MS);
@@ -301,7 +301,7 @@ void setup() {
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
     digitalWrite(CLK_PIN,LOW);
-    digitalWrite(CLAW_BTN_PIN,LOW);
+    digitalWrite(CLAW_BTN_PIN,HIGH);
 
     randomSeed(analogRead(0));
 
@@ -342,7 +342,7 @@ void loop() {
 
     if (second_btn.released()) {
         ball_servo.write(BALL_SERVO_MAX);
-        digitalWrite(CLAW_BTN_PIN,HIGH);
+        digitalWrite(CLAW_BTN_PIN,LOW);
         // digitalWrite(BLOWER_PIN, HIGH);
         game_reset_timer.start();
         blower_timer.start();
