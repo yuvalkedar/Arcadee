@@ -77,10 +77,11 @@ DP, G, F, E, D, C, B, A
 #define SENS_8_THRESHOLD (600)
 #define WIN_SERVO_MAX (10)
 #define WIN_SERVO_MIN (130)
-#define BALL_SERVO_MAX (130)    //OPEN POAITION
-#define BALL_SERVO_MIN (30)     //CLOSE POSITION
+#define BALL_SERVO_MAX (10)    //OPEN POAITION
+#define BALL_SERVO_MIN (100)     //CLOSE POSITION
 #define WIN_RESET_DELAY_MS (3000)
 #define GAME_RESET_DELAY_MS (2000)
+#define BLOWER_DELAY_MS (4000)
 #define WIN_SERVO_DELAY_MS (150)
 
 Servo win_servo;
@@ -250,14 +251,16 @@ void win_reset_cb(){
 }
 
 void game_reset_cb() {
-    game_reset_timer.stop();
+    // game_reset_timer.stop();
     digitalWrite(CLAW_BTN_PIN,HIGH);
     ball_servo.write(BALL_SERVO_MIN);
+    // digitalWrite(BLOWER_PIN, HIGH);
+    blower_timer.start();
 }
 
 void blower_reset_cb() {
-    blower_timer.stop();
-    // digitalWrite(BLOWER_PIN, LOW);
+    // blower_timer.stop();
+    digitalWrite(BLOWER_PIN, HIGH);
 }
 
 void setup() {
@@ -276,14 +279,14 @@ void setup() {
     game_reset_timer.setTimeout(GAME_RESET_DELAY_MS);
 
     blower_timer.setCallback(blower_reset_cb);
-    game_reset_timer.setTimeout(GAME_RESET_DELAY_MS);
+    blower_timer.setTimeout(BLOWER_DELAY_MS);
 
     pinMode(DATA_PIN, OUTPUT);  
     pinMode(LATCH_PIN, OUTPUT);
     pinMode(CLK_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(CLAW_BTN_PIN, OUTPUT);
-    // pinMode(BLOWER_PIN, OUTPUT);
+    pinMode(BLOWER_PIN, OUTPUT);
 
     pinMode(BTN_1_PIN, INPUT);
     pinMode(BTN_2_PIN, INPUT);
@@ -297,7 +300,7 @@ void setup() {
     pinMode(START_GAME_PIN, INPUT);
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
-    // digitalWrite(BLOWER_PIN, LOW);
+    digitalWrite(BLOWER_PIN, HIGH);
     digitalWrite(DATA_PIN,LOW);
     digitalWrite(LATCH_PIN,LOW);
     digitalWrite(CLK_PIN,LOW);
@@ -343,9 +346,9 @@ void loop() {
     if (second_btn.released()) {
         ball_servo.write(BALL_SERVO_MAX);
         digitalWrite(CLAW_BTN_PIN,LOW);
-        // digitalWrite(BLOWER_PIN, HIGH);
+        digitalWrite(BLOWER_PIN, LOW);
         game_reset_timer.start();
-        blower_timer.start();
+        // blower_timer.start();
     }
 
     TimerManager::instance().update();
