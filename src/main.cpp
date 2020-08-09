@@ -81,7 +81,7 @@ DP, G, F, E, D, C, B, A
 #define BALL_SERVO_MIN (100)     //CLOSE POSITION
 #define WIN_RESET_DELAY_MS (3000)
 #define GAME_RESET_DELAY_MS (2000)
-#define BLOWER_DELAY_MS (4000)
+#define BLOWER_DELAY_MS (9000)
 #define WIN_SERVO_DELAY_MS (150)
 
 Servo win_servo;
