@@ -48,14 +48,14 @@ DP, G, F, E, D, C, B, A
 
 // #define DEBUG
 
-#define BTN_1_PIN (A0)
-#define BTN_2_PIN (A1)
-#define BTN_3_PIN (A2)
-#define BTN_4_PIN (A3)
-#define BTN_5_PIN (A4)
-#define BTN_6_PIN (A5)
-#define BTN_7_PIN (A6)
-#define BTN_8_PIN (A7)
+#define BTN_1_PIN (A2)
+#define BTN_2_PIN (A5)
+#define BTN_3_PIN (A3)
+#define BTN_4_PIN (A6)
+#define BTN_5_PIN (A1)
+#define BTN_6_PIN (A4)
+#define BTN_7_PIN (A7)
+#define BTN_8_PIN (A0)
 #define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
 #define BALL_SERVO_PIN (3)
 #define CLAW_BTN_PIN (4)
