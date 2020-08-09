@@ -97,7 +97,8 @@ uint16_t num_array[9] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
 uint8_t segment[7] = {0b01000000, 0b00000001, 0b00000010, 0b00000100, 0b00100000, 0b00010000, 0b00001000};
 uint8_t btns_pins[8] = {BTN_1_PIN ,BTN_2_PIN ,BTN_3_PIN ,BTN_4_PIN ,BTN_5_PIN ,BTN_6_PIN ,BTN_7_PIN ,BTN_8_PIN};
 uint16_t sensor_threshold[8] = {SENS_1_THRESHOLD, SENS_2_THRESHOLD, SENS_3_THRESHOLD, SENS_4_THRESHOLD, SENS_5_THRESHOLD, SENS_6_THRESHOLD, SENS_7_THRESHOLD, SENS_8_THRESHOLD};
-// uint8_t char_array[16] = {123, 96, 93, 117, 102, 55, 63, 97, 127, 119, 111, 62, 27, 124, 31, 15};   // with characters
+// uint8_t good_array[4] = {0b01110111, 0b01111011, 0b01111011, 0b01111100};   // "good""
+uint8_t nice_array[4] = {0b01101011, 0b01100000, 0b00011011, 0b00011111};   // "nice""
 long rand_digit_4;
 long rand_digit_3;
 long rand_digit_2;
@@ -149,6 +150,15 @@ void generate_code() {
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
     shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_1]);
+    digitalWrite(LATCH_PIN,HIGH);
+}
+
+void write_nice(){
+    digitalWrite(LATCH_PIN,LOW);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[3]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[2]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[1]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[0]);
     digitalWrite(LATCH_PIN,HIGH);
 }
 
@@ -234,6 +244,7 @@ void update_code(uint16_t mask) {
                 update_win_servo(1);
                 win_reset_timer.start();
                 digitalWrite(WINNING_SENSOR_PIN, HIGH);
+                write_nice();
                 // Serial.println("YOU WON");
                 delay(2000);
                 state = DIGIT_1;
