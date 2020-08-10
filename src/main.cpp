@@ -48,14 +48,14 @@ DP, G, F, E, D, C, B, A
 
 // #define DEBUG
 
-#define BTN_1_PIN (A2)
-#define BTN_2_PIN (A5)
-#define BTN_3_PIN (A3)
-#define BTN_4_PIN (A6)
-#define BTN_5_PIN (A1)
-#define BTN_6_PIN (A4)
-#define BTN_7_PIN (A7)
-#define BTN_8_PIN (A0)
+#define BTN_1_PIN (A1)
+#define BTN_2_PIN (A4)
+#define BTN_3_PIN (A7)
+#define BTN_4_PIN (A0)
+#define BTN_5_PIN (A2)
+#define BTN_6_PIN (A5)
+#define BTN_7_PIN (A3)
+#define BTN_8_PIN (A6)
 #define SECOND_BTN_PIN (2)  // Front pin in the RPi (GPIO17)
 #define BALL_SERVO_PIN (3)
 #define CLAW_BTN_PIN (4)
@@ -80,7 +80,7 @@ DP, G, F, E, D, C, B, A
 #define BALL_SERVO_MAX (10)    //OPEN POAITION
 #define BALL_SERVO_MIN (100)     //CLOSE POSITION
 #define WIN_RESET_DELAY_MS (3000)
-#define GAME_RESET_DELAY_MS (2000)
+#define GAME_RESET_DELAY_MS (1000)
 #define BLOWER_DELAY_MS (9000)
 #define WIN_SERVO_DELAY_MS (150)
 
@@ -155,10 +155,10 @@ void generate_code() {
 
 void write_nice(){
     digitalWrite(LATCH_PIN,LOW);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[3]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[2]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[1]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,good_array[0]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[3]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[2]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[1]);
+    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[0]);
     digitalWrite(LATCH_PIN,HIGH);
 }
 
@@ -241,8 +241,8 @@ void update_code(uint16_t mask) {
             // winning_check();
             if (mask == num_array[rand_digit_4]) {
                 delete_digit(4);
-                update_win_servo(1);
                 win_reset_timer.start();
+                update_win_servo(1);
                 digitalWrite(WINNING_SENSOR_PIN, HIGH);
                 write_nice();
                 // Serial.println("YOU WON");
@@ -255,14 +255,12 @@ void update_code(uint16_t mask) {
 }
 
 void win_reset_cb(){
-    win_reset_timer.stop();
     update_win_servo(0);    //closes the door
     generate_code();
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
 void game_reset_cb() {
-    // game_reset_timer.stop();
     digitalWrite(CLAW_BTN_PIN,HIGH);
     ball_servo.write(BALL_SERVO_MIN);
     // digitalWrite(BLOWER_PIN, HIGH);
@@ -270,7 +268,6 @@ void game_reset_cb() {
 }
 
 void blower_reset_cb() {
-    // blower_timer.stop();
     digitalWrite(BLOWER_PIN, HIGH);
 }
 
