@@ -242,7 +242,7 @@ void reset_cb() {
     winning_state = false;
     // reset_nerf_position();  // restart yaw position
 
-    // digitalWrite(WINNING_SENSOR_PIN, LOW);
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
 void shooting_reset_cb() {
