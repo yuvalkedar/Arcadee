@@ -1,14 +1,11 @@
 /*
   Safe Machine for Gigantic - Clawee.
     Hit the correct code or get caught - then the code will regenerate itself.
-
     ========================================================================
-
   Copyright (C) 2020 Yuval Kedar - KD Tech
   Instagram: https://www.instagram.com/kd_technology/
   Date: Jun 20
   Dev board: Arduino Uno
-
         A
     ----------
    |          |
@@ -20,7 +17,6 @@
    |          |
     ----------
         E       * DP
-
 DP, G, F, E, D, C, B, A
 01111011 - 0
 01100000 - 1
@@ -45,6 +41,7 @@ DP, G, F, E, D, C, B, A
 #include <Servo.h>
 #include <timer.h>  // https://github.com/brunocalou/Timer
 #include <timerManager.h>
+#include <ShiftRegister74HC595.h>
 
 // #define DEBUG
 
@@ -67,14 +64,14 @@ DP, G, F, E, D, C, B, A
 #define CLK_PIN (10)
 #define DATA_PIN (11)
 
-#define SENS_1_THRESHOLD (600)
-#define SENS_2_THRESHOLD (600)
+#define SENS_1_THRESHOLD (650)
+#define SENS_2_THRESHOLD (650)
 #define SENS_3_THRESHOLD (600)
 #define SENS_4_THRESHOLD (600)
-#define SENS_5_THRESHOLD (600)
-#define SENS_6_THRESHOLD (600)
+#define SENS_5_THRESHOLD (650)
+#define SENS_6_THRESHOLD (650)
 #define SENS_7_THRESHOLD (600)
-#define SENS_8_THRESHOLD (600)
+#define SENS_8_THRESHOLD (650)
 #define WIN_SERVO_MAX (10)
 #define WIN_SERVO_MIN (130)
 #define BALL_SERVO_MAX (10)    //OPEN POAITION
@@ -83,6 +80,7 @@ DP, G, F, E, D, C, B, A
 #define GAME_RESET_DELAY_MS (1000)
 #define BLOWER_DELAY_MS (9000)
 #define WIN_SERVO_DELAY_MS (150)
+#define DIGITS_COUNT (4)
 
 Servo win_servo;
 Servo ball_servo;
@@ -91,19 +89,20 @@ Timer game_reset_timer;
 Timer blower_timer;
 Button second_btn(SECOND_BTN_PIN);
 Button start_btn(START_GAME_PIN);
+ShiftRegister74HC595<DIGITS_COUNT> sr(DATA_PIN, CLK_PIN, LATCH_PIN);
 
 uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127};   // without characters, zero (= 123), and nine (?=119)
 uint16_t num_array[9] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
 uint8_t segment[7] = {0b01000000, 0b00000001, 0b00000010, 0b00000100, 0b00100000, 0b00010000, 0b00001000};
 uint8_t btns_pins[8] = {BTN_1_PIN ,BTN_2_PIN ,BTN_3_PIN ,BTN_4_PIN ,BTN_5_PIN ,BTN_6_PIN ,BTN_7_PIN ,BTN_8_PIN};
 uint16_t sensor_threshold[8] = {SENS_1_THRESHOLD, SENS_2_THRESHOLD, SENS_3_THRESHOLD, SENS_4_THRESHOLD, SENS_5_THRESHOLD, SENS_6_THRESHOLD, SENS_7_THRESHOLD, SENS_8_THRESHOLD};
-// uint8_t good_array[4] = {0b01110111, 0b01111011, 0b01111011, 0b01111100};   // "good""
 uint8_t nice_array[4] = {0b01101011, 0b01100000, 0b00011011, 0b00011111};   // "nice""
+//TODO: add "play" & "open"
 long rand_digit_4;
 long rand_digit_3;
 long rand_digit_2;
 long rand_digit_1;
-char ser_input;
+uint8_t digits_buff[DIGITS_COUNT];
 
 enum State {
   DIGIT_1 = 1,
@@ -132,12 +131,11 @@ void delay_millis(uint32_t ms) {
 void generate_code() {
     for (uint8_t d = 60; d > 0; d -= 5) {
         for (uint8_t i = 0; i < 8; i++) {
-            digitalWrite(LATCH_PIN,LOW);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,segment[i]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,segment[i]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,segment[i]);
-            shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,segment[i]);
-            digitalWrite(LATCH_PIN,HIGH);
+            digits_buff[0] = segment[i];
+            digits_buff[1] = segment[i];
+            digits_buff[2] = segment[i];
+            digits_buff[3] = segment[i];
+            sr.setAll(digits_buff);
             delay_millis(d);  
         }
     }
@@ -145,21 +143,19 @@ void generate_code() {
     rand_digit_3 = random(0,8);
     rand_digit_2 = random(0,8);
     rand_digit_1 = random(0,8);
-    digitalWrite(LATCH_PIN,LOW);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_4]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_3]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_2]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,char_array[rand_digit_1]);
-    digitalWrite(LATCH_PIN,HIGH);
+    digits_buff[0] = char_array[rand_digit_4];
+    digits_buff[1] = char_array[rand_digit_3];
+    digits_buff[2] = char_array[rand_digit_2];
+    digits_buff[3] = char_array[rand_digit_1];
+    sr.setAll(digits_buff);
 }
 
 void write_nice(){
-    digitalWrite(LATCH_PIN,LOW);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[3]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[2]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[1]);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,nice_array[0]);
-    digitalWrite(LATCH_PIN,HIGH);
+    digits_buff[0] = nice_array[0];
+    digits_buff[1] = nice_array[1];
+    digits_buff[2] = nice_array[2];
+    digits_buff[3] = nice_array[3];
+    sr.setAll(digits_buff);
 }
 
 void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
@@ -176,71 +172,51 @@ void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
     }
 }
 
-void delete_digit(uint8_t digit) {
-    uint8_t dig1, dig2, dig3, dig4;
-    if (digit == 1) {
-        dig1 = char_array[rand_digit_4];
-        dig2 = char_array[rand_digit_3];
-        dig3 = char_array[rand_digit_2];
-        dig4 = 0;
-    }
-    else if (digit == 2) {
-        dig1 = char_array[rand_digit_4];
-        dig2 = char_array[rand_digit_3];
-        dig3 = 0;
-        dig4 = 0;
-    }
-    else if (digit == 3) {
-        dig1 = char_array[rand_digit_4];
-        dig2 = 0;
-        dig3 = 0;
-        dig4 = 0;
-    }
-    else if (digit == 4) {
-        dig1 = 0;
-        dig2 = 0;
-        dig3 = 0;
-        dig4 = 0;
-    }
-
-    digitalWrite(LATCH_PIN,LOW);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig1);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig2);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig3);
-    shiftOut(DATA_PIN,CLK_PIN,MSBFIRST,dig4);
-    digitalWrite(LATCH_PIN,HIGH);
-}
-
 void update_code(uint16_t mask) {
     switch(state) {
         case DIGIT_1:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (mask == num_array[rand_digit_1]) {
-                delete_digit(1);
+            if (mask == num_array[rand_digit_4]) {
+                digits_buff[0] = 0;
+                digits_buff[1] = char_array[rand_digit_3];
+                digits_buff[2] = char_array[rand_digit_2];
+                digits_buff[3] = char_array[rand_digit_1];
+                sr.setAll(digits_buff);
                 delay(2000);    // Delay overcomes faulty press when two or more following numbers are identical
                 state = DIGIT_2;
             }
             break;
         case DIGIT_2:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (mask == num_array[rand_digit_2]) {
-                delete_digit(2);
+            if (mask == num_array[rand_digit_3]) {
+                digits_buff[0] = 0;
+                digits_buff[1] = 0;
+                digits_buff[2] = char_array[rand_digit_2];
+                digits_buff[3] = char_array[rand_digit_1];
+                sr.setAll(digits_buff);
                 delay(2000);
                 state = DIGIT_3;
             }
             break;
         case DIGIT_3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (mask == num_array[rand_digit_3]) {
-                delete_digit(3);
+            if (mask == num_array[rand_digit_2]) {
+                digits_buff[0] = 0;
+                digits_buff[1] = 0;
+                digits_buff[2] = 0;
+                digits_buff[3] = char_array[rand_digit_1];
+                sr.setAll(digits_buff);
                 delay(2000);
                 state = DIGIT_4;
             }
             break;
         case DIGIT_4:
-            // winning_check();
-            if (mask == num_array[rand_digit_4]) {
-                delete_digit(4);
+            if (mask == num_array[rand_digit_1]) {
+                digits_buff[0] = 0;
+                digits_buff[1] = 0;
+                digits_buff[2] = 0;
+                digits_buff[3] = 0;
+                sr.setAll(digits_buff);
                 win_reset_timer.start();
                 update_win_servo(1);
                 digitalWrite(WINNING_SENSOR_PIN, HIGH);
@@ -263,7 +239,6 @@ void win_reset_cb(){
 void game_reset_cb() {
     digitalWrite(CLAW_BTN_PIN,HIGH);
     ball_servo.write(BALL_SERVO_MIN);
-    // digitalWrite(BLOWER_PIN, HIGH);
     blower_timer.start();
 }
 
@@ -356,7 +331,6 @@ void loop() {
         digitalWrite(CLAW_BTN_PIN,LOW);
         digitalWrite(BLOWER_PIN, LOW);
         game_reset_timer.start();
-        // blower_timer.start();
     }
 
     TimerManager::instance().update();
