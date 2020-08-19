@@ -19,7 +19,7 @@
 */
 
 #include <FastLED.h>
-// #include <ezButton.h>
+#include <ezButton.h>
 #include "Arduino.h"
 
 #define WINNING_SENSOR_PIN (12)
@@ -32,8 +32,8 @@
 #define LED_BRIGHTNESS (200)
 #define WINNING_FX_TIME (1000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
 
-// ezButton blue_btn(BLUE_BTN_PIN);
-// ezButton red_btn(RED_BTN_PIN);
+ezButton blue_btn(BLUE_BTN_PIN);
+ezButton red_btn(RED_BTN_PIN);
 CRGB leds[NUM_LEDS];
 
 uint8_t score = 0;
@@ -87,13 +87,13 @@ void winning() {
             leds[i] = CHSV(hue++, 255, 255);
             FastLED.show(); 
             fadeall();
-            delay(10);
+            // delay(10);
         }
         for(int8_t i = (NUM_LEDS)-1; i >= 0; i--) {
             leds[i] = CHSV(hue++, 255, 255);
             FastLED.show();
             fadeall();
-            delay(10);
+            // delay(10);
         }
     }
     
@@ -111,15 +111,15 @@ void winning_check() {
 }
 
 void update_score() {
-    // if (blue_btn.isPressed()) {
-    if (!digitalRead(BLUE_BTN_PIN)) {
+    if (blue_btn.isPressed()) {
+    // if (!digitalRead(BLUE_BTN_PIN)) {
         // score++;
         Serial.println("+PLUS+");
         if (score++ >= 4) score = 4;
     }
 
-    // if (red_btn.isPressed()) {
-    if (!digitalRead(RED_BTN_PIN)) {
+    if (red_btn.isPressed()) {
+    // if (!digitalRead(RED_BTN_PIN)) {
         // score--;
         Serial.println("-MINUS-");
         if (score-- <= 0) score = 0;
@@ -150,7 +150,7 @@ void update_score() {
     }
     else if (score == 4) {
         winning_check();
-        winning();  //this func makes issue when using ezButton.h. It calls "show" too many times.
+        // winning();  //this func makes issue when using ezButton.h. It calls "show" too many times.
         reset_game();
     }
 }
@@ -161,11 +161,11 @@ void setup() {
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 
-    pinMode(BLUE_BTN_PIN, INPUT_PULLUP);
-    pinMode(RED_BTN_PIN, INPUT_PULLUP);
+    // pinMode(BLUE_BTN_PIN, INPUT_PULLUP);
+    // pinMode(RED_BTN_PIN, INPUT_PULLUP);
 
-    // blue_btn.setDebounceTime(50);
-    // red_btn.setDebounceTime(50);
+    blue_btn.setDebounceTime(150);
+    red_btn.setDebounceTime(150);
 
     FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
     FastLED.setBrightness(LED_BRIGHTNESS);
@@ -184,9 +184,9 @@ void setup() {
 }
 
 void loop() {
-    // blue_btn.loop();
-    // red_btn.loop();
-    // Serial.println(".");
+    blue_btn.loop();
+    red_btn.loop();
+    Serial.println(score);
 
     update_score();
 }
