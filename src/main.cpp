@@ -97,7 +97,6 @@ uint8_t segment[7] = {0b01000000, 0b00000001, 0b00000010, 0b00000100, 0b00100000
 uint8_t btns_pins[8] = {BTN_1_PIN ,BTN_2_PIN ,BTN_3_PIN ,BTN_4_PIN ,BTN_5_PIN ,BTN_6_PIN ,BTN_7_PIN ,BTN_8_PIN};
 uint16_t sensor_threshold[8] = {SENS_1_THRESHOLD, SENS_2_THRESHOLD, SENS_3_THRESHOLD, SENS_4_THRESHOLD, SENS_5_THRESHOLD, SENS_6_THRESHOLD, SENS_7_THRESHOLD, SENS_8_THRESHOLD};
 uint8_t nice_array[4] = {0b01101011, 0b01100000, 0b00011011, 0b00011111};   // "nice""
-//TODO: add "play" & "open"
 long rand_digit_4;
 long rand_digit_3;
 long rand_digit_2;
@@ -218,6 +217,7 @@ void update_code(uint16_t mask) {
                 digits_buff[3] = 0;
                 sr.setAll(digits_buff);
                 win_reset_timer.start();
+                ball_servo.write(BALL_SERVO_MIN);
                 update_win_servo(1);
                 digitalWrite(WINNING_SENSOR_PIN, HIGH);
                 write_nice();
