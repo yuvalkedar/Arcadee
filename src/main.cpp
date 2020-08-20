@@ -21,6 +21,8 @@
 #include <FastLED.h>
 #include <ezButton.h>
 #include "Arduino.h"
+#include <timer.h>  // https://github.com/brunocalou/Timer
+#include <timerManager.h>
 
 #define WINNING_SENSOR_PIN (12)
 #define LED_DATA_PIN (6)
@@ -31,72 +33,69 @@
 #define NUM_LEDS (64)
 #define LED_BRIGHTNESS (200)
 #define WINNING_FX_TIME (1000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
+#define DELETE_TIME_MS  (1000)
 
 ezButton blue_btn(BLUE_BTN_PIN);
 ezButton red_btn(RED_BTN_PIN);
 CRGB leds[NUM_LEDS];
+Timer delete_level;
 
 uint8_t score = 0;
 uint8_t last_score = 0;
 uint8_t level[] = {0, 28, 48, 60, 63};  //levels 0 to 4 //TODO: check I'm not exceeding 64 LEDs - it may need to be 63.
+uint8_t start_point = 0;
+uint32_t cur_time;
 
 void level_up(uint8_t led_num) {
-    uint8_t start_point = 0;
     if (led_num == level[1]) start_point = 0;   //up from level 0 to 1
     if (led_num == level[2]) start_point = 28;  //up from level 1 to 2
     if (led_num == level[3]) start_point = 48;  //up from level 2 to 3
     if (led_num == level[4]) start_point = 60;  //...
 
-    for (uint8_t current_pixel = start_point; current_pixel < led_num; current_pixel++) {
-        leds[current_pixel] = CRGB::Blue;
-        FastLED.show();
-        delay(50);
-    }
-    delay(2500); //debounce
+    for (uint8_t current_pixel = start_point; current_pixel < led_num; current_pixel++) leds[current_pixel] = CRGB::Blue;
+    FastLED.show();
 }
 
 void level_down(uint8_t led_num) {  //clear prev level's frame and do the opposite direction effect with red color
-    uint8_t start_point = 0;
     if (led_num == level[0]) start_point = 28;  //down from level 1 to 0
     if (led_num == level[1]) start_point = 48;  //down from level 2 to 1
     if (led_num == level[2]) start_point = 60;  //down from level 3 to 2
     if (led_num == level[3]) start_point = 63;  //...
 
-    for (int8_t i = start_point - 1; i >= led_num; i--) {
-        leds[i] = CRGB::Red;
-        FastLED.show();
-        delay(50);
-    }
-    for (int8_t i = start_point - 1; i >= led_num; i--) {
-        leds[i] = CRGB::Black;
-        FastLED.show();
-    }
-    delay(2500); //debounce
+    for (int8_t i = start_point - 1; i >= led_num; i--) leds[i] = CRGB::Red;
+    FastLED.show();
+    delete_level.start();
+}
+
+void delete_level_cb() {
+    uint8_t led_num;
+    if (start_point == 28) led_num = level[0];
+    if (start_point == 48) led_num = level[1];
+    if (start_point == 60) led_num = level[2];
+    if (start_point == 63) led_num = level[3];
+
+    for (int8_t i = start_point - 1; i >= led_num; i--) leds[i] = CRGB::Black;
+    FastLED.show();
 }
 
 void fadeall() {
-    for(uint8_t i = 0; i < NUM_LEDS; i++) {
-        leds[i].nscale8(250);
-    }
+    for (uint8_t i = 0; i < NUM_LEDS; i++) leds[i].nscale8(250);
 }
 
 void winning() {
     static uint8_t hue = 0;
-    for(uint8_t x = 0; x < 5; x++) {
-        for(int8_t i = 0; i < NUM_LEDS; i++) {
+    for (uint8_t x = 0; x < 5; x++) {
+        for (int8_t i = 0; i < NUM_LEDS; i++) {
             leds[i] = CHSV(hue++, 255, 255);
             FastLED.show(); 
             fadeall();
-            // delay(10);
         }
-        for(int8_t i = (NUM_LEDS)-1; i >= 0; i--) {
+        for (int8_t i = (NUM_LEDS)-1; i >= 0; i--) {
             leds[i] = CHSV(hue++, 255, 255);
             FastLED.show();
             fadeall();
-            // delay(10);
         }
     }
-    
 }
 
 void reset_game() {
@@ -112,15 +111,11 @@ void winning_check() {
 
 void update_score() {
     if (blue_btn.isPressed()) {
-    // if (!digitalRead(BLUE_BTN_PIN)) {
-        // score++;
         Serial.println("+PLUS+");
         if (score++ >= 4) score = 4;
     }
 
     if (red_btn.isPressed()) {
-    // if (!digitalRead(RED_BTN_PIN)) {
-        // score--;
         Serial.println("-MINUS-");
         if (score-- <= 0) score = 0;
     }
@@ -150,10 +145,11 @@ void update_score() {
     }
     else if (score == 4) {
         winning_check();
-        // winning();  //this func makes issue when using ezButton.h. It calls "show" too many times.
+        winning();  //this func makes issue when using ezButton.h. It calls "show" too many times.
         reset_game();
     }
 }
+
 
 void setup() {
     Serial.begin(SERIAL_BAUDRATE);
@@ -161,11 +157,11 @@ void setup() {
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 
-    // pinMode(BLUE_BTN_PIN, INPUT_PULLUP);
-    // pinMode(RED_BTN_PIN, INPUT_PULLUP);
+    delete_level.setCallback(delete_level_cb);
+    delete_level.setTimeout(DELETE_TIME_MS);
 
-    blue_btn.setDebounceTime(150);
-    red_btn.setDebounceTime(150);
+    blue_btn.setDebounceTime(50);
+    red_btn.setDebounceTime(50);
 
     FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
     FastLED.setBrightness(LED_BRIGHTNESS);
@@ -186,7 +182,8 @@ void setup() {
 void loop() {
     blue_btn.loop();
     red_btn.loop();
-    Serial.println(score);
+    // Serial.println(score);
 
     update_score();
+    TimerManager::instance().update();
 }
