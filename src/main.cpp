@@ -160,8 +160,8 @@ void setup() {
     delete_level.setCallback(delete_level_cb);
     delete_level.setTimeout(DELETE_TIME_MS);
 
-    blue_btn.setDebounceTime(50);
-    red_btn.setDebounceTime(50);
+    blue_btn.setDebounceTime(25);
+    red_btn.setDebounceTime(25);
 
     FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
     FastLED.setBrightness(LED_BRIGHTNESS);
