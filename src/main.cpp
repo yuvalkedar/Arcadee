@@ -66,7 +66,7 @@ DP, G, F, E, D, C, B, A
 
 #define SENS_1_THRESHOLD (650)
 #define SENS_2_THRESHOLD (600)
-#define SENS_3_THRESHOLD (600)
+#define SENS_3_THRESHOLD (550)
 #define SENS_4_THRESHOLD (600)
 #define SENS_5_THRESHOLD (650)
 #define SENS_6_THRESHOLD (650)
@@ -304,7 +304,7 @@ void setup() {
 }
 
 void loop() {
-    #ifdef DEBUG
+#ifdef DEBUG
     Serial.print(analogRead(BTN_1_PIN));
     Serial.print("\t");
     Serial.print(analogRead(BTN_2_PIN));
@@ -335,5 +335,4 @@ void loop() {
 
     TimerManager::instance().update();
 #endif
-
 }
