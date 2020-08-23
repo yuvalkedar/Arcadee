@@ -211,10 +211,10 @@ void setup() {
     Serial.println(F(
         "____________________________________\n"
         "\n"
-        "  S P A C E S H I P  M a c h i n e  \n"
+        " S P A C E S H I P    M a c h i n e \n"
         "____________________________________\n"
         "\n"
-        "Made by KD Technology\n"
+        "       ~Made by KD Technology~      \n"
         "\n"));
 
     pinMode(STEPS_PIN, OUTPUT);
