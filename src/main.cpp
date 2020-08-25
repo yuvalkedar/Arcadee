@@ -35,10 +35,10 @@
 #define NUM_LEDS (87)
 #define LED_BRIGHTNESS (50)
 #define WINNING_FX_TIME (2000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
-#define LDR_1_LIMIT (100)
-#define LDR_2_LIMIT (109)
-#define LDR_3_LIMIT (90)
-#define LDR_4_LIMIT (95)
+#define LDR_1_LIMIT (120)
+#define LDR_2_LIMIT (120)
+#define LDR_3_LIMIT (120)
+#define LDR_4_LIMIT (120)
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
@@ -47,6 +47,7 @@
 #define LEVEL_1_2_DEG (610)
 #define LEVEL_2_3_DEG (550)
 #define LEVEL_3_4_DEG (550)
+#define DEBOUNCE_MS (100)
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
 BasicStepperDriver rocket(MOTOR_STEPS, DIR_PIN, STEPS_PIN);
@@ -57,6 +58,7 @@ bool ls_state = 0;
 int8_t score = 0;
 uint8_t last_score = 0;
 int increment_steps = 1;
+uint32_t cur_time;
 
 void delay_millis(uint32_t ms) {
     uint32_t start_ms = millis();
@@ -137,35 +139,37 @@ void update_score() {
     uint16_t ldr_3_current_read = analogRead(LDR_3_PIN);
     uint16_t ldr_4_current_read = analogRead(LDR_4_PIN);
 
-    if ((ldr_1_current_read > LDR_1_LIMIT) || (ldr_3_current_read > LDR_3_LIMIT)) {
-        score++;
-        if (score >= 4) {
-            score = 4;
+    if (millis() - cur_time >= DEBOUNCE_MS) {
+        if ((ldr_1_current_read > LDR_1_LIMIT) || (ldr_3_current_read > LDR_3_LIMIT)) {
+            score++;
+            if (score >= 4) {
+                score = 4;
+            }
         }
-    }
 
-    if ((ldr_2_current_read > LDR_2_LIMIT) || (ldr_4_current_read > LDR_4_LIMIT)) {
-        score--;
-        if (score <= 0) {
-            score = 0;
+        if ((ldr_2_current_read > LDR_2_LIMIT) || (ldr_4_current_read > LDR_4_LIMIT)) {
+            score--;
+            if (score <= 0) {
+                score = 0;
+            }
+            // delay_millis(2000);
         }
-        delay_millis(2000);
+        #ifdef DEBUG
+            Serial.println();
+            Serial.print(ldr_1_current_read);
+            Serial.print(" ");
+            Serial.print(ldr_2_current_read);
+            Serial.print(" ");
+            Serial.print(ldr_3_current_read);
+            Serial.print(" ");
+            Serial.print(ldr_4_current_read);
+            Serial.print(" ");
+            Serial.print(score);
+            Serial.print(" ");
+            Serial.println(last_score);
+        #endif
+        cur_time = millis();
     }
-
-#ifdef DEBUG
-    Serial.println();
-    Serial.print(ldr_1_current_read);
-    Serial.print(" ");
-    Serial.print(ldr_2_current_read);
-    Serial.print(" ");
-    Serial.print(ldr_3_current_read);
-    Serial.print(" ");
-    Serial.print(ldr_4_current_read);
-    Serial.print(" ");
-    Serial.print(score);
-    Serial.print(" ");
-    Serial.println(last_score);
-#endif
 
     switch (score) {
         case 0:
@@ -240,6 +244,7 @@ void setup() {
     score = 0;
     last_score = 0;
     reset_rocket_position();
+    cur_time = millis();
 }
 
 void loop() {
