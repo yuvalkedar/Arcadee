@@ -64,7 +64,7 @@ DP, G, F, E, D, C, B, A
 #define CLK_PIN (10)
 #define DATA_PIN (11)
 
-#define SENS_1_THRESHOLD (620)
+#define SENS_1_THRESHOLD (650)
 #define SENS_2_THRESHOLD (600)
 #define SENS_3_THRESHOLD (550)
 #define SENS_4_THRESHOLD (600)
@@ -81,6 +81,7 @@ DP, G, F, E, D, C, B, A
 #define BLOWER_DELAY_MS (9000)
 #define WIN_SERVO_DELAY_MS (150)
 #define DIGITS_COUNT (4)
+#define DEBOUNCE_MS (1)
 
 Servo win_servo;
 Servo ball_servo;
@@ -102,6 +103,7 @@ long rand_digit_3;
 long rand_digit_2;
 long rand_digit_1;
 uint8_t digits_buff[DIGITS_COUNT];
+uint32_t cur_time;
 
 enum State {
   DIGIT_1 = 1,
@@ -248,6 +250,7 @@ void blower_reset_cb() {
 
 void setup() {
     Serial.begin(115200);
+    cur_time = millis();
 
     win_servo.attach(WIN_SERVO_PIN);
     win_servo.write(WIN_SERVO_MAX);  // restart win servo position
@@ -305,24 +308,30 @@ void setup() {
 
 void loop() {
 #ifdef DEBUG
-    Serial.print(analogRead(BTN_1_PIN));
-    Serial.print("\t");
-    Serial.print(analogRead(BTN_2_PIN));
-    Serial.print("\t");
-    Serial.print(analogRead(BTN_3_PIN));
-    Serial.print("\t");
-    Serial.print(analogRead(BTN_4_PIN));
-    Serial.print("\t");
-    Serial.print(analogRead(BTN_5_PIN));
-    Serial.print("\t");
-    Serial.print(analogRead(BTN_6_PIN));
-    Serial.print("\t");
-    Serial.print(analogRead(BTN_7_PIN));
-    Serial.print("\t");
-    Serial.println(analogRead(BTN_8_PIN));
-    delay_millis(500);
-#else
-    update_code(get_sensors_state());
+    if (millis() - cur_time >= DEBOUNCE_MS) {
+        Serial.print(analogRead(BTN_1_PIN));
+        Serial.print("\t");
+        Serial.print(analogRead(BTN_2_PIN));
+        Serial.print("\t");
+        Serial.print(analogRead(BTN_3_PIN));
+        Serial.print("\t");
+        Serial.print(analogRead(BTN_4_PIN));
+        Serial.print("\t");
+        Serial.print(analogRead(BTN_5_PIN));
+        Serial.print("\t");
+        Serial.print(analogRead(BTN_6_PIN));
+        Serial.print("\t");
+        Serial.print(analogRead(BTN_7_PIN));
+        Serial.print("\t");
+        Serial.println(analogRead(BTN_8_PIN));
+        cur_time = millis();
+    }
+#endif
+    if (millis() - cur_time >= DEBOUNCE_MS) {
+        update_code(get_sensors_state());
+        // Serial.println(".");
+        cur_time = millis();
+    }
 
     if (start_btn.pressed()) ball_servo.write(BALL_SERVO_MIN);
 
@@ -334,5 +343,4 @@ void loop() {
     }
 
     TimerManager::instance().update();
-#endif
 }
