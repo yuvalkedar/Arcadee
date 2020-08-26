@@ -42,11 +42,11 @@
 #define MOTOR_STEPS (200)  // Motor steps per revolution. Most steppers are 200 steps or 1.8 degrees/step
 #define RPM (120)
 #define MICROSTEPS (1)
-#define DEG_PER_LEVEL (370)
-#define LEVEL_0_1_DEG (DEG_PER_LEVEL + 80)
-#define LEVEL_1_2_DEG (610)
-#define LEVEL_2_3_DEG (550)
-#define LEVEL_3_4_DEG (550)
+#define DEG_PER_LEVEL (600)
+#define LEVEL_0_1_DEG (DEG_PER_LEVEL + 100)
+#define LEVEL_1_2_DEG (910)
+#define LEVEL_2_3_DEG (950)
+#define LEVEL_3_4_DEG (950)
 #define DEBOUNCE_MS (100)
 
 Adafruit_NeoPixel strip(NUM_LEDS, LED_DATA_PIN, NEO_GRB + NEO_KHZ800);
@@ -87,7 +87,7 @@ void sweep_motor() {
 
 void reset_rocket_position() {  //go down until the limit switch is pressed
     while (digitalRead(BTM_LIMIT_SWITCH_PIN)) {
-        digitalWrite(DIR_PIN, LOW);  // (HIGH = anti-clockwise / LOW = clockwise)
+        digitalWrite(DIR_PIN, HIGH);  // (HIGH = anti-clockwise / LOW = clockwise)
         digitalWrite(STEPS_PIN, HIGH);
         delay(5);  // Delay to slow down speed of Stepper
         digitalWrite(STEPS_PIN, LOW);
@@ -108,7 +108,7 @@ void colorWipe(uint32_t c, uint8_t wait) {
 }
 
 void winning() {  // winning effect
-    rocket.rotate(LEVEL_3_4_DEG);
+    rocket.rotate(-LEVEL_3_4_DEG);
 
     colorWipe(strip.Color(255, 0, 0), 10);  // Red
     strip.clear();
@@ -117,7 +117,7 @@ void winning() {  // winning effect
 
 void reset_game() {
     // Serial.println("RESTART GAME");
-    if (score != 0) rocket.rotate(-(LEVEL_3_4_DEG + LEVEL_2_3_DEG + LEVEL_1_2_DEG + LEVEL_0_1_DEG));
+    if (score != 0) rocket.rotate((LEVEL_3_4_DEG + LEVEL_2_3_DEG + LEVEL_1_2_DEG + LEVEL_0_1_DEG));
     status = 0;
     score = 0;
     strip.clear();
@@ -174,24 +174,24 @@ void update_score() {
     switch (score) {
         case 0:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 1) rocket.rotate(-LEVEL_0_1_DEG);
+            if (last_score == 1) rocket.rotate(LEVEL_0_1_DEG);
             last_score = 0;
             break;
         case 1:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 0) rocket.rotate(LEVEL_0_1_DEG);   // level up
-            if (last_score == 2) rocket.rotate(-LEVEL_1_2_DEG);  // level down
+            if (last_score == 0) rocket.rotate(-LEVEL_0_1_DEG);   // level up
+            if (last_score == 2) rocket.rotate(LEVEL_1_2_DEG);  // level down
             last_score = 1;
             break;
         case 2:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 1) rocket.rotate(LEVEL_1_2_DEG);   // level up
-            if (last_score == 3) rocket.rotate(-LEVEL_2_3_DEG);  // level down
+            if (last_score == 1) rocket.rotate(-LEVEL_1_2_DEG);   // level up
+            if (last_score == 3) rocket.rotate(LEVEL_2_3_DEG);  // level down
             last_score = 2;
             break;
         case 3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
-            if (last_score == 2) rocket.rotate(LEVEL_2_3_DEG);  // level up
+            if (last_score == 2) rocket.rotate(-LEVEL_2_3_DEG);  // level up
             last_score = 3;
             break;
         case 4:
