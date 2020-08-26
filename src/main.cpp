@@ -34,6 +34,7 @@
 #define LED_BRIGHTNESS (200)
 #define WINNING_FX_TIME (1000)  //NOTICE: make sure the number isn't too big. User might start a new game before the effect ends.
 #define DELETE_TIME_MS  (1000)
+#define DEBOUNCE_MS (50)
 
 ezButton blue_btn(BLUE_BTN_PIN);
 ezButton red_btn(RED_BTN_PIN);
@@ -160,8 +161,8 @@ void setup() {
     delete_level.setCallback(delete_level_cb);
     delete_level.setTimeout(DELETE_TIME_MS);
 
-    blue_btn.setDebounceTime(25);
-    red_btn.setDebounceTime(25);
+    blue_btn.setDebounceTime(DEBOUNCE_MS);
+    red_btn.setDebounceTime(DEBOUNCE_MS);
 
     FastLED.addLeds<NEOPIXEL, LED_DATA_PIN>(leds, NUM_LEDS);  // GRB ordering is assumed
     FastLED.setBrightness(LED_BRIGHTNESS);
