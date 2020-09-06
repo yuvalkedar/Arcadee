@@ -64,7 +64,7 @@ DP, G, F, E, D, C, B, A
 #define CLK_PIN (10)
 #define DATA_PIN (11)
 
-#define SENS_1_THRESHOLD (650)
+#define SENS_1_THRESHOLD (620)
 #define SENS_2_THRESHOLD (600)
 #define SENS_3_THRESHOLD (550)
 #define SENS_4_THRESHOLD (650)
