@@ -63,6 +63,8 @@ DP, G, F, E, D, C, B, A
 #define LATCH_PIN (9)
 #define CLK_PIN (10)
 #define DATA_PIN (11)
+#define MOTOR_A_PIN (12)
+#define MOTOR_B_PIN (13)
 
 #define SENS_1_THRESHOLD (620)
 #define SENS_2_THRESHOLD (600)
@@ -78,10 +80,11 @@ DP, G, F, E, D, C, B, A
 #define BALL_SERVO_MIN (100)     //CLOSE POSITION
 #define WIN_RESET_DELAY_MS (3000)
 #define GAME_RESET_DELAY_MS (1000)
-#define BLOWER_DELAY_MS (9000)
+#define BLOWER_DELAY_MS (11000)
 #define WIN_SERVO_DELAY_MS (150)
 #define DIGITS_COUNT (4)
 #define DEBOUNCE_MS (1)
+#define SPINNING_MS (7000)
 
 Servo win_servo;
 Servo ball_servo;
@@ -104,6 +107,8 @@ long rand_digit_2;
 long rand_digit_1;
 uint8_t digits_buff[DIGITS_COUNT];
 uint32_t cur_time;
+uint32_t spinning_time;
+bool direction = 0;
 
 enum State {
   DIGIT_1 = 1,
@@ -248,9 +253,14 @@ void blower_reset_cb() {
     digitalWrite(BLOWER_PIN, HIGH);
 }
 
+void switch_dir() {
+
+}
+
 void setup() {
     Serial.begin(115200);
     cur_time = millis();
+    spinning_time = millis();
 
     win_servo.attach(WIN_SERVO_PIN);
     win_servo.write(WIN_SERVO_MAX);  // restart win servo position
@@ -273,6 +283,8 @@ void setup() {
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
     pinMode(CLAW_BTN_PIN, OUTPUT);
     pinMode(BLOWER_PIN, OUTPUT);
+    pinMode(MOTOR_A_PIN, OUTPUT);
+    pinMode(MOTOR_B_PIN, OUTPUT);
 
     pinMode(BTN_1_PIN, INPUT);
     pinMode(BTN_2_PIN, INPUT);
@@ -327,6 +339,19 @@ void loop() {
         cur_time = millis();
     }
 #endif
+    if (millis() - spinning_time >= SPINNING_MS) {
+        if (!direction) {
+            digitalWrite(MOTOR_A_PIN, HIGH);
+            digitalWrite(MOTOR_B_PIN, LOW);
+            direction = 1;
+        } else {
+            digitalWrite(MOTOR_A_PIN, LOW);
+            digitalWrite(MOTOR_B_PIN, HIGH); 
+            direction = 0;
+        }
+        spinning_time = millis();
+    }
+
     if (millis() - cur_time >= DEBOUNCE_MS) {
         update_code(get_sensors_state());
         // Serial.println(".");
