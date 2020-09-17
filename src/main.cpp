@@ -71,7 +71,7 @@ DP, G, F, E, D, C, B, A
 #define SENS_3_THRESHOLD (550)
 #define SENS_4_THRESHOLD (650)
 #define SENS_5_THRESHOLD (650)
-#define SENS_6_THRESHOLD (600)
+#define SENS_6_THRESHOLD (620)
 #define SENS_7_THRESHOLD (550)
 #define SENS_8_THRESHOLD (650)
 #define WIN_SERVO_MAX (10)
