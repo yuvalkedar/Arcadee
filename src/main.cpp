@@ -254,13 +254,19 @@ void blower_reset_cb() {
 }
 
 void switch_dir() {
-
+    if (!direction) {
+        digitalWrite(MOTOR_A_PIN, HIGH);
+        digitalWrite(MOTOR_B_PIN, LOW);
+        direction = 1;
+    } else {
+        digitalWrite(MOTOR_A_PIN, LOW);
+        digitalWrite(MOTOR_B_PIN, HIGH); 
+        direction = 0;
+    }
 }
 
 void setup() {
     Serial.begin(115200);
-    cur_time = millis();
-    spinning_time = millis();
 
     win_servo.attach(WIN_SERVO_PIN);
     win_servo.write(WIN_SERVO_MAX);  // restart win servo position
@@ -340,15 +346,7 @@ void loop() {
     }
 #endif
     if (millis() - spinning_time >= SPINNING_MS) {
-        if (!direction) {
-            digitalWrite(MOTOR_A_PIN, HIGH);
-            digitalWrite(MOTOR_B_PIN, LOW);
-            direction = 1;
-        } else {
-            digitalWrite(MOTOR_A_PIN, LOW);
-            digitalWrite(MOTOR_B_PIN, HIGH); 
-            direction = 0;
-        }
+        switch_dir();
         spinning_time = millis();
     }
 
