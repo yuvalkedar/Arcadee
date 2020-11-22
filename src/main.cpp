@@ -118,7 +118,8 @@ enum State {
 };
 uint8_t state = DIGIT_1;
 
-uint16_t get_sensors_state() {
+uint16_t get_sensors_state()
+{
     uint16_t btns_mask = 0;
     for (uint16_t i = 0; i < sizeof(btns_pins); i++) {
         if (analogRead(btns_pins[i]) <= sensor_threshold[i]){
@@ -129,12 +130,23 @@ uint16_t get_sensors_state() {
     return btns_mask;
 }
 
-void delay_millis(uint32_t ms) {
+void delay_millis(uint32_t ms)
+{
     uint32_t start_ms = millis();
     while (millis() - start_ms < ms);
 }
 
-void generate_code() {
+void clear_screen()
+{
+    digits_buff[0] = 0;
+    digits_buff[1] = 0;
+    digits_buff[2] = 0;
+    digits_buff[3] = 0;
+    sr.setAll(digits_buff);
+}
+
+void generate_code()
+{
     for (uint8_t d = 60; d > 0; d -= 5) {
         for (uint8_t i = 0; i < 8; i++) {
             digits_buff[0] = segment[i];
@@ -142,9 +154,10 @@ void generate_code() {
             digits_buff[2] = segment[i];
             digits_buff[3] = segment[i];
             sr.setAll(digits_buff);
-            delay_millis(d);  
+            delay_millis(d);
         }
     }
+    clear_screen();
     rand_digit_4 = random(0,8);
     rand_digit_3 = random(0,8);
     rand_digit_2 = random(0,8);
@@ -156,7 +169,8 @@ void generate_code() {
     sr.setAll(digits_buff);
 }
 
-void write_nice(){
+void write_nice()
+{
     digits_buff[0] = nice_array[0];
     digits_buff[1] = nice_array[1];
     digits_buff[2] = nice_array[2];
@@ -164,7 +178,8 @@ void write_nice(){
     sr.setAll(digits_buff);
 }
 
-void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
+void update_win_servo(bool dir)    //dir 1 = open, dir 0 = close
+{
     if (dir) {
         for (uint8_t i = WIN_SERVO_MAX; i <= WIN_SERVO_MIN; i += 5) {
             win_servo.write(i);
@@ -178,11 +193,13 @@ void update_win_servo(bool dir) {   //dir 1 = open, dir 0 = close
     }
 }
 
-void update_code(uint16_t mask) {
+void update_code(uint16_t mask)
+{
     switch(state) {
         case DIGIT_1:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (mask == num_array[rand_digit_4]) {
+                clear_screen();
                 digits_buff[0] = 0;
                 digits_buff[1] = char_array[rand_digit_3];
                 digits_buff[2] = char_array[rand_digit_2];
@@ -195,6 +212,7 @@ void update_code(uint16_t mask) {
         case DIGIT_2:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (mask == num_array[rand_digit_3]) {
+                clear_screen();
                 digits_buff[0] = 0;
                 digits_buff[1] = 0;
                 digits_buff[2] = char_array[rand_digit_2];
@@ -207,6 +225,7 @@ void update_code(uint16_t mask) {
         case DIGIT_3:
             digitalWrite(WINNING_SENSOR_PIN, LOW);
             if (mask == num_array[rand_digit_2]) {
+                clear_screen();
                 digits_buff[0] = 0;
                 digits_buff[1] = 0;
                 digits_buff[2] = 0;
@@ -218,11 +237,7 @@ void update_code(uint16_t mask) {
             break;
         case DIGIT_4:
             if (mask == num_array[rand_digit_1]) {
-                digits_buff[0] = 0;
-                digits_buff[1] = 0;
-                digits_buff[2] = 0;
-                digits_buff[3] = 0;
-                sr.setAll(digits_buff);
+                clear_screen();
                 win_reset_timer.start();
                 ball_servo.write(BALL_SERVO_MIN);
                 update_win_servo(1);
@@ -237,23 +252,27 @@ void update_code(uint16_t mask) {
     }
 }
 
-void win_reset_cb(){
+void win_reset_cb()
+{
     update_win_servo(0);    //closes the door
     generate_code();
     digitalWrite(WINNING_SENSOR_PIN, LOW);
 }
 
-void game_reset_cb() {
+void game_reset_cb()
+{
     digitalWrite(CLAW_BTN_PIN,HIGH);
     ball_servo.write(BALL_SERVO_MIN);
     blower_timer.start();
 }
 
-void blower_reset_cb() {
+void blower_reset_cb()
+{
     digitalWrite(BLOWER_PIN, HIGH);
 }
 
-void switch_dir() {
+void switch_dir()
+{
     if (!direction) {
         digitalWrite(MOTOR_A_PIN, HIGH);
         digitalWrite(MOTOR_B_PIN, LOW);
@@ -265,7 +284,8 @@ void switch_dir() {
     }
 }
 
-void setup() {
+void setup()
+{
     Serial.begin(115200);
 
     win_servo.attach(WIN_SERVO_PIN);
@@ -324,7 +344,8 @@ void setup() {
     generate_code();
 }
 
-void loop() {
+void loop()
+{
 #ifdef DEBUG
     if (millis() - cur_time >= DEBOUNCE_MS) {
         Serial.print(analogRead(BTN_1_PIN));
@@ -344,7 +365,11 @@ void loop() {
         Serial.println(analogRead(BTN_8_PIN));
         cur_time = millis();
     }
+    
+    char input = Serial.read();
+    if (input == 'g') generate_code();
 #endif
+
     if (millis() - spinning_time >= SPINNING_MS) {
         switch_dir();
         spinning_time = millis();
