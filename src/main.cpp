@@ -77,7 +77,7 @@ DP, G, F, E, D, C, B, A
 #define WIN_SERVO_DELAY_MS (150)
 #define SENSORS_DEBOUNCE_MS (1)
 #define DIGIT_DEBOUNCE_MS (2000)
-#define SPINNING_MS (1000)
+#define SPINNING_MS (7000)
 
 enum {
     DIGIT_1 = 0,
@@ -102,8 +102,8 @@ Servo ball_servo;
 Button second_btn(SECOND_BTN_PIN);
 ShiftRegister74HC595<DIGITS_COUNT> sr(DATA_PIN, CLK_PIN, LATCH_PIN);
 
-// uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127};   // without characters, zero (= 123), and nine (?=119)
-uint8_t char_array[9] = {249, 164, 176, 153, 146, 130, 248, 128};   // fixed for home setup
+uint8_t char_array[9] = {96, 93, 117, 102, 55, 63, 97, 127};   // without characters, zero (= 123), and nine (?=119)
+// uint8_t char_array[9] = {249, 164, 176, 153, 146, 130, 248, 128};   // fixed for home setup
 uint16_t num_array[9] = {1, 2, 4, 8, 16, 32, 64, 128, 256};
 uint8_t segment[7] = {0b01000000, 0b00000001, 0b00000010, 0b00000100, 0b00100000, 0b00010000, 0b00001000};
 uint8_t btns_pins[8] = {BTN_1_PIN ,BTN_2_PIN ,BTN_3_PIN ,BTN_4_PIN ,BTN_5_PIN ,BTN_6_PIN ,BTN_7_PIN ,BTN_8_PIN};
@@ -201,7 +201,7 @@ void update_code(uint8_t mask)
                 digits_buff[2] = char_array[rand_digit_2];
                 digits_buff[3] = char_array[rand_digit_1];
                 sr.setAll(digits_buff);
-                end_game_ms = millis();
+                digit_ms = millis();
                 code_state = WAIT;
             }
             break;
@@ -214,7 +214,7 @@ void update_code(uint8_t mask)
                 digits_buff[2] = char_array[rand_digit_2];
                 digits_buff[3] = char_array[rand_digit_1];
                 sr.setAll(digits_buff);
-                end_game_ms = millis();
+                digit_ms = millis();
                 code_state = WAIT;
             }
             break;
@@ -227,7 +227,7 @@ void update_code(uint8_t mask)
                 digits_buff[2] = 0;
                 digits_buff[3] = char_array[rand_digit_1];
                 sr.setAll(digits_buff);
-                end_game_ms = millis();
+                digit_ms = millis();
                 code_state = WAIT;
             }
             break;
@@ -357,7 +357,7 @@ void setup()
 
     randomSeed(analogRead(0));
 
-    game_setup();
+    generate_code();
 }
 
 void loop()
