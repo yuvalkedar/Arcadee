@@ -29,6 +29,10 @@ void setup()
 
     digitalWrite(WINNING_SENSOR_PIN, LOW);
     door.attach(SERVO_PIN);
+
+    //clear balls
+    door.write(SERVO_MIN);
+    delay(2000);
     door.write(SERVO_MAX);
 }
 
