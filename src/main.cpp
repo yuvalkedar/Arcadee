@@ -1,60 +1,61 @@
 #include <Arduino.h>
 #include <Servo.h>
-#include <timer.h>  // https://github.com/brunocalou/Timer
-#include <timerManager.h>
 
-// #define DEBUG
-
-#define BTN_PIN (4)
+#define BTN_PIN (2)
 #define SERVO_PIN (3)
-#define WINNING_SENSOR_PIN (7)
+#define WINNING_SENSOR_PIN (4)
 
 #define SERVO_MIN (20)
 #define SERVO_MAX (110)
-#define RESET_DELAY_MS  (2000)
+#define RESET_MS  (2000)
 
-Timer reset_timer;
+enum {
+    IDLE,
+    WIN,
+    WAIT,
+    RESET
+};
+
 Servo door;
 
-void reset_cb() {
-    door.write(SERVO_MAX);
-    digitalWrite(WINNING_SENSOR_PIN, HIGH);
-    Serial.println("won");
-}
+uint8_t game_state;
+uint32_t door_ms;
 
-void setup() {
-    Serial.begin(115200);
+void setup()
+{
     pinMode(BTN_PIN, INPUT_PULLUP);  
     pinMode(SERVO_PIN, OUTPUT);
     pinMode(WINNING_SENSOR_PIN, OUTPUT);
 
-    digitalWrite(WINNING_SENSOR_PIN, HIGH);
+    digitalWrite(WINNING_SENSOR_PIN, LOW);
     door.attach(SERVO_PIN);
     door.write(SERVO_MAX);
-
-    reset_timer.setCallback(reset_cb);
-    reset_timer.setTimeout(RESET_DELAY_MS);
-
-    Serial.println(F(
-    "_____________________________________\n"
-    "\n"
-    "     W E I G H T   M a c h i n e     \n"
-    "_____________________________________\n"
-    "\n"
-    "         Made by KD Technology      \n"
-    "\n"));
 }
 
-void loop() {
-    if (!digitalRead(BTN_PIN)) {
-        Serial.println("pressed");
-        door.write(SERVO_MIN);
-        digitalWrite(WINNING_SENSOR_PIN, LOW);
-        reset_timer.start();
-    }
-    // else {
-                // digitalWrite(WINNING_SENSOR_PIN, LOW);
-    // }
+void loop()
+{
+    uint32_t cur_ms = millis();
 
-    TimerManager::instance().update();
+    switch (game_state) {
+        case IDLE:
+            if (!digitalRead(BTN_PIN)) game_state = WIN;
+            break;
+        case WIN:
+            door.write(SERVO_MIN);
+            digitalWrite(WINNING_SENSOR_PIN, HIGH);
+            door_ms = cur_ms;
+            game_state = WAIT;
+            break;
+        case WAIT:
+            if (cur_ms - door_ms >= RESET_MS) {
+                door_ms = cur_ms;
+                game_state = RESET;
+            }
+            break;
+        case RESET:
+            door.write(SERVO_MAX);
+            digitalWrite(WINNING_SENSOR_PIN, LOW);
+            game_state = IDLE;
+            break;
+    }
 }
